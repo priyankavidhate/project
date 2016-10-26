@@ -27,13 +27,39 @@
     <!-- sign up form -->
     <string name="first_name">First Name*</string>
     <string name="last_name">Last Name*</string>
-    <string name="email_id">email_id</string>
+    <string name="email_id">email id</string>
     <string name="org_name">Organization*</string>
     <string name="title_activity_home">HomeActivity</string>
+    <string name="employee_role">Role of an Employee</string>
 
     <!-- server endpoints -->
     <string name="server_url">http://10.0.2.2:5000</string>
     <string name="account">/account</string>
+    <string name="orders">/orders</string>
+    <string name="order">/order</string>
+    <string name="org">/org</string>
 
+    <!-- home activity -->
+    <string name="inbox">Inbox</string>
+    <string name="outbox">Outbox</string>
+    <string name="add_employee">Add Employee</string>
+    <string name="place_order">Place Order</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+
+    <!-- place an order activity -->
+    <string name="to_company">To Comapany/Organization</string>
+    <string name="item">Item</string>
+    <string name="quantity">Quantity</string>
+    <string name="message">Any additional request</string>
+
+    <!-- order details -->
+    <string name="sender_completed">Waiting for receiver acknowledgment</string>
+    <string name="receiver_completed">Order Completed</string>
+    <string name="cancel_order"> Cancel Order</string>
+    <string name="cancelled">Order Cancelled</string>
+    <string name="sumbit">sumbit</string>
 
 </resources>

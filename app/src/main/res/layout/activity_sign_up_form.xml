@@ -24,22 +24,41 @@
         android:hint="@string/last_name"
         android:inputType="textPersonName">
     </EditText>
-    <EditText
-        android:id="@+id/EditTextOrgName"
+
+    <ViewSwitcher
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/my_switcher"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:hint="@string/org_name"
-        android:inputType="text">
-    </EditText>
+        android:layout_height="wrap_content" >
+
+        <TextView
+            android:id="@+id/ViewOrgName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:layout_marginLeft="5dp"
+            android:layout_marginStart="5dp"
+            android:textSize="20sp"
+            android:text="@string/org_name" />
+
+        <EditText
+            android:id="@+id/EditTextOrgName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="@string/org_name" >
+        </EditText>
+
+    </ViewSwitcher>
+
     <TextView
         android:id="@+id/EmailText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
+        android:layout_marginStart="5dp"
         android:layout_marginLeft="5dp"
-        android:textSize="20dp"
-        android:hint="@string/email_id"
-        android:inputType="textEmailAddress">
+        android:textSize="20sp"
+        android:hint="@string/email_id">
     </TextView>
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -53,7 +72,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:text="Submit" />
+            android:text="@string/sumbit"
+            android:textColor="#ffffff"
+            android:background="#00bfff"/>
 
     </LinearLayout>
 

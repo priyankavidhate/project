@@ -26,17 +26,18 @@ dependencies {
     })
 
     // Dependency for Google Sign-In
-    
 
     // Dependency for roundImage
-    
+
     // apache
-    
+
     compile 'com.google.android.gms:play-services-auth:9.6.1'
     compile 'de.hdodenhof:circleimageview:2.1.0'
     compile 'com.squareup.picasso:picasso:2.5.2'
     compile 'org.apache.httpcomponents:httpcore:4.4.1'
     compile 'com.android.support:appcompat-v7:24.2.1'
     compile 'com.android.support:design:24.2.1'
+    compile 'com.android.support:support-v4:24.2.1'
+    compile 'com.android.support:recyclerview-v7:24.2.1'
     testCompile 'junit:junit:4.12'
 }

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_sign_up_form"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="com.example.rohitvyavahare.project.SignUpForm">
+
+    <EditText
+        android:id="@+id/EditToOrg"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/to_company"
+        android:layout_marginTop="20dp"
+        android:inputType="textNoSuggestions">
+    </EditText>
+
+    <EditText
+        android:id="@+id/EditItem"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/item"
+        android:layout_marginTop="20dp"
+        android:inputType="textNoSuggestions">
+    </EditText>
+
+    <EditText
+        android:id="@+id/EditQuantity"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/quantity"
+        android:layout_marginTop="20dp"
+        android:inputType="numberDecimal">
+    </EditText>
+
+    <EditText
+        android:id="@+id/EditMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/message"
+        android:layout_marginTop="20dp"
+        android:inputType="textMultiLine"
+        android:lines="8"
+        android:minLines="5"
+        android:maxLines="10"
+        android:scrollbars="vertical"
+        android:background="@drawable/back">
+    </EditText>
+
+    <Button
+        android:id="@+id/PlaceOrder"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Place an Order"
+        android:layout_marginTop="20dp"
+        android:textColor="#ffffff"
+        android:background="#00bfff"/>
+
+</TableLayout>

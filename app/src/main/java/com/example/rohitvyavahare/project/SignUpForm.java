@@ -10,10 +10,10 @@ import android.text.InputType;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.ViewSwitcher;
 
 import org.json.JSONObject;
 
@@ -27,7 +27,7 @@ import static com.example.rohitvyavahare.project.R.string.account;
 
 public class SignUpForm extends AppCompatActivity {
 
-    private ProgressDialog progress ;
+    private ProgressDialog progress;
 
     private static final String TAG = "SignUpFromActivity";
     Button button;
@@ -53,13 +53,19 @@ public class SignUpForm extends AppCompatActivity {
                 text.setText(extras.getString("email"));
             }
             if (extras.getString("org") != null) {
+                Log.d(TAG, "we have org " + extras.getString("org"));
+                text = (TextView) findViewById(R.id.ViewOrgName);
+                text.setText(extras.getString("org"));
+            }
+            else{
+                Log.d(TAG, "we dont have org " + extras.getString("org"));
+                ViewSwitcher switcher = (ViewSwitcher) findViewById(R.id.my_switcher);
+                switcher.showNext();
                 edit = (EditText) findViewById(R.id.EditTextOrgName);
                 edit.setText(extras.getString("org"));
                 edit.setInputType(InputType.TYPE_NULL);
             }
-            if(extras.getString("org") == null && edit.requestFocus()) {
-                getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
-            }
+
             //The key argument here must match that used in the other activity
         }
         String imageUrl = extras.getString("photo_url").toString();
@@ -124,28 +130,34 @@ public class SignUpForm extends AppCompatActivity {
         protected Void doInBackground(Bundle... params) {
             try {
 
-                //final TextView outputView = (TextView) findViewById(R.id.showOutput);
-                URL url = new URL("http://10.0.2.2:5000/account");
+                String call = getString(R.string.server_url) + getString(R.string.account);
+                Log.d(TAG, "url:" + call);
+                URL url = new URL(call);
 
                 HttpURLConnection connection = (HttpURLConnection)url.openConnection();
                 connection.setRequestMethod("POST");
                 connection.setRequestProperty("Content-Type", "application/json");
                 connection.setRequestProperty("Accept", "application/json");
                 connection.setDoOutput(true);
+
                 Log.d(TAG, "params:" +  params.toString());
                 Bundle b = params[0];
                 Log.d(TAG, "b:" +  b.getString("fname"));
-                JSONObject account   = new JSONObject();
+
+                final JSONObject account   = new JSONObject();
                 account.put("first_name", b.getString("fname"));
                 account.put("last_name", b.getString("lname"));
                 account.put("email", b.getString("email"));
                 account.put("org", b.getString("org"));
                 account.put("confirm", "true");
+                account.put("band", 1);
+                account.put("role", "owner");
 
                 DataOutputStream dStream = new DataOutputStream(connection.getOutputStream());
                 dStream.writeBytes(account.toString());
                 dStream.flush();
                 dStream.close();
+
                 int responseCode = connection.getResponseCode();
 
                 Log.d(TAG, "Sending 'POST' request to URL : :" +  url);
@@ -158,16 +170,12 @@ public class SignUpForm extends AppCompatActivity {
 
                     @Override
                     public void run() {
-                        //outputView.setText(output);
                         if(response == 200){
-
                             Intent intent = new Intent(SignUpForm.this, HomeActivity.class);
+                            intent.putExtra("account", account.toString());
                             startActivity(intent);
                             progress.dismiss();
-
-
                         }
-
                     }
                 });
 
@@ -184,9 +192,9 @@ public class SignUpForm extends AppCompatActivity {
             return null;
         }
 
-        protected void onPostExecute() {
-            progress.dismiss();
-        }
+//        protected void onPostExecute() {
+//            progress.dismiss();
+//        }
 
     }
 
@@ -216,14 +224,17 @@ public class SignUpForm extends AppCompatActivity {
                 connection.setRequestProperty("Content-Type", "application/json");
                 connection.setRequestProperty("Accept", "application/json");
                 connection.setDoOutput(true);
+
                 Log.d(TAG, "params:" +  params.toString());
                 Log.d(TAG, "b:" +  b.getString("fname"));
-                JSONObject account   = new JSONObject();
+
+                final JSONObject account   = new JSONObject();
                 account.put("first_name", b.getString("fname"));
                 account.put("last_name", b.getString("lname"));
                 account.put("email", b.getString("email"));
                 account.put("org", b.getString("org"));
                 account.put("confirm", "true");
+                account.put("band", b.getString("band"));
 
                 DataOutputStream dStream = new DataOutputStream(connection.getOutputStream());
                 dStream.writeBytes(account.toString());
@@ -243,12 +254,10 @@ public class SignUpForm extends AppCompatActivity {
                     public void run() {
                         //outputView.setText(output);
                         if(response == 201 || response == 200){
-
                             Intent intent = new Intent(SignUpForm.this, HomeActivity.class);
+                            intent.putExtra("account", account.toString());
                             startActivity(intent);
                             progress.dismiss();
-
-
                         }
 
                     }
@@ -267,9 +276,9 @@ public class SignUpForm extends AppCompatActivity {
             return null;
         }
 
-        protected void onPostExecute() {
-            progress.dismiss();
-        }
+//        protected void onPutExecute() {
+//            progress.dismiss();
+//        }
 
     }
 

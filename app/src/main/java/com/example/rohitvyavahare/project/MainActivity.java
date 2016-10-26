@@ -270,7 +270,7 @@ public class MainActivity extends AppCompatActivity implements
 
                 final HashMap<String, String> map = new HashMap<String, String>();
 
-                if(responseCode == 201) {
+                if(responseCode == 200) {
                     BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
                     StringBuilder sb = new StringBuilder();
                     String line;
@@ -280,18 +280,13 @@ public class MainActivity extends AppCompatActivity implements
                     br.close();
                     JSONObject jObject = new JSONObject(sb.toString());
                     Iterator<?> keys = jObject.keys();
-
                     while( keys.hasNext() ){
                         String key = (String)keys.next();
                         String value = jObject.getString(key);
                         map.put(key, value);
                     }
 
-
-
                 }
-
-
 
                 MainActivity.this.runOnUiThread(new Runnable() {
 
@@ -300,17 +295,33 @@ public class MainActivity extends AppCompatActivity implements
                         progress.dismiss();
                         Intent intent = new Intent(MainActivity.this, SignUpForm.class);
                         System.out.println("map : "+map.get("confirm"));
-                        if(responseCode == 201 && map.containsKey("confirm") && map.get("confirm").equals("true")) {
-                            Log.d(TAG, "email kjdndkjnk:" + map.get("org"));
-                            Intent home_intent = new Intent(MainActivity.this, HomeActivity.class);
-                            startActivity(home_intent);
-                            return;
-                        }
-                        else if(responseCode == 201 && map.containsKey("confirm") && map.get("confirm").equals("false") && map.containsKey("org")) {
 
-                            Log.d(TAG, "email:" + map.get("org"));
-                            intent.putExtra("org", map.get("org"));
+                        switch (responseCode) {
+                            case 200 : {
 
+                                if(map.containsKey("confirm") && map.get("confirm").equals("true")) {
+                                    Log.d(TAG, "confirm org:" + map.get("org"));
+                                    Intent home_intent = new Intent(MainActivity.this, HomeActivity.class);
+                                    home_intent.putExtra("account", (new JSONObject(map)).toString());
+                                    startActivity(home_intent);
+                                    return;
+                                }
+                                else if( map.containsKey("confirm") && map.get("confirm").equals("false") && map.containsKey("org")) {
+                                    Log.d(TAG, "not confirmed org:" + map.get("org"));
+                                    intent.putExtra("org", map.get("org"));
+                                }
+                                if(map.containsKey("band")) {
+                                    intent.putExtra("band", map.get("band"));
+                                }
+                                break;
+                            }
+                            case 404 : {
+
+                            }
+
+                            case 500 : {
+
+                            }
                         }
 
                         Log.d(TAG, "email:" + acct.getEmail());
@@ -323,7 +334,6 @@ public class MainActivity extends AppCompatActivity implements
                         intent.putExtra("email", acct.getEmail());
                         intent.putExtra("photo_url", acct.getPhotoUrl().toString());
                         startActivity(intent);
-
 
 
                     }
