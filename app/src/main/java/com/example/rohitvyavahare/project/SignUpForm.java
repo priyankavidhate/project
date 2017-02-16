@@ -3,155 +3,231 @@ package com.example.rohitvyavahare.project;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.text.InputType;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
-import android.widget.ViewSwitcher;
+import android.widget.Toast;
+
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnPausedListener;
+import com.google.firebase.storage.OnProgressListener;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+import com.mikhaellopez.circularimageview.CircularImageView;
 
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 
-import static com.example.rohitvyavahare.project.R.string.account;
-
-public class SignUpForm extends AppCompatActivity {
+public class SignUpForm extends AppCompatActivity
+        implements View.OnClickListener {
 
     private ProgressDialog progress;
-
     private static final String TAG = "SignUpFromActivity";
-    Button button;
-    EditText edit;
-    TextView text;
     Bundle extras;
+    private static final int SELECT_PICTURE = 1;
+    FirebaseStorage storage = FirebaseStorage.getInstance();
+    private UploadTask uploadTask;
+    private Bitmap bitmap = null;
+    private ProgressDialog mProgressDialog;
+    private SharedPreferences prefs;
+    private SharedPreferences.Editor editor;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sign_up_form);
         extras = getIntent().getExtras();
-        if (extras != null) {
-            if(extras.getString("fname") != null) {
-                edit = (EditText) findViewById(R.id.EditTextFName);
-                edit.setText(extras.getString("fname"));
-            }
-            if(extras.getString("lname") != null) {
-                edit = (EditText) findViewById(R.id.EditTextLName);
-                edit.setText(extras.getString("lname"));
-            }
-            if(extras.getString("email") != null) {
-                text = (TextView) findViewById(R.id.EmailText);
-                text.setText(extras.getString("email"));
-            }
-            if (extras.getString("org") != null) {
-                Log.d(TAG, "we have org " + extras.getString("org"));
-                text = (TextView) findViewById(R.id.ViewOrgName);
-                text.setText(extras.getString("org"));
-            }
-            else{
-                Log.d(TAG, "we dont have org " + extras.getString("org"));
-                ViewSwitcher switcher = (ViewSwitcher) findViewById(R.id.my_switcher);
-                switcher.showNext();
-                edit = (EditText) findViewById(R.id.EditTextOrgName);
-                edit.setText(extras.getString("org"));
-                edit.setInputType(InputType.TYPE_NULL);
-            }
-
-            //The key argument here must match that used in the other activity
-        }
-        String imageUrl = extras.getString("photo_url").toString();
-        Log.d(TAG, "url:" + imageUrl);
-        addListenerOnButton(extras);
-
-    }
-
-    public void addListenerOnButton(final Bundle bundle) {
-
-        button = (Button) findViewById(R.id.SignUpSubmit);
-        button.setOnClickListener(new OnClickListener() {
-
-            @Override
-            public void onClick(View arg0) {
-                edit = (EditText) findViewById(R.id.EditTextOrgName);
-                if( edit.getText().toString().trim().equals("")){
-                    edit.setError( "Organization name is required!" );
-                }
-                if(extras.getString("org") != null) {
-                    new PutClass(SignUpForm.this).execute(bundle);
-                }
-                else {
-                    bundle.putString("org", edit.getText().toString().trim());
-                    bundle.putString("role", "owner");
-                    new PostClass(SignUpForm.this).execute(bundle);
-                }
-
-            }
-
-        });
-
+        this.setTitle("Sign up");
+        findViewById(R.id.EditProfilePic).setOnClickListener(SignUpForm.this);
+        findViewById(R.id.btn_submit).setOnClickListener(SignUpForm.this);
+        prefs = getSharedPreferences(getString(R.string.private_file), MODE_PRIVATE);
     }
 
     @Override
-    protected void onDestroy() {
+    public void onClick(View v) {
+
         try {
-            if (progress != null && progress.isShowing()) {
-                progress.dismiss();
+
+            final Intent intent;
+
+            int i = v.getId();
+            if (i == R.id.EditProfilePic) {
+                intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                startActivityForResult(intent, SELECT_PICTURE);
+            } else if (i == R.id.btn_submit) {
+
+                EditText name = (EditText) findViewById(R.id.EditTextFName);
+                String fullName = name.getText().toString().trim();
+                final JSONObject account = new JSONObject();
+                account.put("name", fullName);
+                account.put(getString(R.string.phone_number), extras.getString(getString(R.string.phone_number)));
+                account.put(getString(R.string.confirm), true);
+
+                editor = prefs.edit();
+                editor.putString("user_name", fullName);
+                editor.commit();
+
+                boolean flag = true;
+
+                if (fullName.equals("")) {
+                    name.setError("Name is required!");
+                    flag = false;
+                }
+                if (bitmap != null && flag) {
+
+                    mProgressDialog = new ProgressDialog(this);
+                    mProgressDialog.setMessage("Loading");
+                    mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+                    mProgressDialog.show();
+                    final Context c = this.getApplicationContext();
+
+
+                    StorageReference storageRef = storage.getReferenceFromUrl(getString(R.string.firebase_storage));
+                    StorageReference mountainsRef = storageRef.child(fullName);
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                    byte[] data = baos.toByteArray();
+
+                    uploadTask = mountainsRef.putBytes(data);
+
+
+                    // Listen for state changes, errors, and completion of the upload.
+                    uploadTask.addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+                            double progress = (100.0 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
+                            mProgressDialog.setProgress((int) progress);
+                            System.out.println("Upload is " + progress + "% done");
+                        }
+                    }).addOnPausedListener(new OnPausedListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onPaused(UploadTask.TaskSnapshot taskSnapshot) {
+                            System.out.println("Upload is paused");
+                        }
+                    }).addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception exception) {
+                            mProgressDialog.dismiss();
+                            Toast.makeText(SignUpForm.this, exception.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                            // Handle successful uploads on complete
+                            mProgressDialog.dismiss();
+                            Uri downloadUrl = taskSnapshot.getMetadata().getDownloadUrl();
+                            Log.d(TAG, "downloadUrl :" + downloadUrl);
+                            try {
+                                account.put("profile_pic", downloadUrl);
+                                new PostClass(SignUpForm.this).execute(account);
+                            } catch (org.json.JSONException e) {
+                                e.printStackTrace();
+                                Toast.makeText(c, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+                            }
+
+                        }
+                    });
+
+                } else if (flag) {
+
+                    account.put("profile_pic", "default");
+                    new PostClass(SignUpForm.this).execute(account);
+
+                }
             }
-        } catch (Exception e) {
+        } catch (org.json.JSONException e) {
             e.printStackTrace();
+            Toast.makeText(this, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
         }
-        super.onDestroy();
+
+
     }
 
-    private class PostClass extends AsyncTask<Bundle, Void, Void> {
+    public String BitMapToString(Bitmap bitmap) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
+        byte[] b = baos.toByteArray();
+        return Base64.encodeToString(b, Base64.DEFAULT);
+    }
+
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        try {
+            super.onActivityResult(requestCode, resultCode, data);
+            if (requestCode == SELECT_PICTURE && resultCode == RESULT_OK && null != data) {
+                progress = new ProgressDialog(this);
+                progress.setMessage("Loading");
+                progress.show();
+                Uri selectedImage = data.getData();
+                Log.d(TAG, "selectedImageUri: " + selectedImage.toString());
+                CircularImageView imageView = (CircularImageView) findViewById(R.id.EditProfilePic);
+                bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(selectedImage));
+                editor = prefs.edit();
+                editor.putString("profile_pic", BitMapToString(bitmap));
+                editor.commit();
+                progress.dismiss();
+                imageView.setImageBitmap(bitmap);
+            }
+        } catch (java.io.FileNotFoundException | java.lang.NullPointerException e) {
+            Log.e(TAG, e.toString());
+        }
+    }
+
+    private class PostClass extends AsyncTask<JSONObject, Void, Void> {
 
         private Context context;
 
-        public PostClass(Context c){
+        public PostClass(Context c) {
             this.context = c;
         }
 
-        protected void onPreExecute(){
-            progress= new ProgressDialog(this.context);
+        protected void onPreExecute() {
+            progress = new ProgressDialog(this.context);
             progress.setMessage("Loading");
             progress.show();
         }
 
         @Override
-        protected Void doInBackground(Bundle... params) {
+        protected Void doInBackground(JSONObject... params) {
             try {
 
-                String call = getString(R.string.server_url) + getString(R.string.account);
-                Log.d(TAG, "url:" + call);
-                URL url = new URL(call);
+                Uri uri = new Uri.Builder()
+                        .scheme("http")
+                        .encodedAuthority(getString(R.string.server_ur_templ))
+                        .path(getString(R.string.sign_up))
+                        .build();
 
-                HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+                URL url = new URL(uri.toString());
+                Log.d(TAG, "url:" + url.toString());
+
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("POST");
                 connection.setRequestProperty("Content-Type", "application/json");
                 connection.setRequestProperty("Accept", "application/json");
                 connection.setDoOutput(true);
 
-                Log.d(TAG, "params:" +  params.toString());
-                Bundle b = params[0];
-                Log.d(TAG, "b:" +  b.getString("fname"));
+                Log.d(TAG, "params:" + params.toString());
 
-                final JSONObject account   = new JSONObject();
-                account.put("first_name", b.getString("fname"));
-                account.put("last_name", b.getString("lname"));
-                account.put("email", b.getString("email"));
-                account.put("org", b.getString("org"));
-                account.put("confirm", "true");
-                account.put("band", 1);
-                account.put("role", "owner");
+                final JSONObject account = params[0];
 
                 DataOutputStream dStream = new DataOutputStream(connection.getOutputStream());
                 dStream.writeBytes(account.toString());
@@ -160,127 +236,96 @@ public class SignUpForm extends AppCompatActivity {
 
                 int responseCode = connection.getResponseCode();
 
-                Log.d(TAG, "Sending 'POST' request to URL : :" +  url);
+                Log.d(TAG, "Sending 'POST' request to URL : :" + url);
                 Log.d(TAG, "Post parameters : " + account.toString());
                 Log.d(TAG, "Response Code : " + responseCode);
 
                 final int response = responseCode;
 
-                SignUpForm.this.runOnUiThread(new Runnable() {
+                final StringBuilder sb = new StringBuilder();
+                String line;
+                BufferedReader br;
+
+                try {
+                    br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                } catch (IOException ioe) {
+                    br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
+                }
+
+                while ((line = br.readLine()) != null) {
+                    sb.append(line + "\n");
+                }
+                br.close();
+
+                final JSONObject res = new JSONObject(sb.toString());
+
+                String token = prefs.getString(getString(R.string.refresh_token), "null");
+                if(!token.equals("null")){
+                    Utils util = new Utils();
+                    util.sendTokentoServer(token, res.getString("id"), context);
+
+                }
+
+                runOnUiThread(new Runnable() {
 
                     @Override
                     public void run() {
-                        if(response == 200){
-                            Intent intent = new Intent(SignUpForm.this, HomeActivity.class);
-                            intent.putExtra("account", account.toString());
-                            startActivity(intent);
-                            progress.dismiss();
-                        }
-                    }
-                });
+                        onPostExecute();
+
+                        try {
+
+                            switch (response) {
+
+                                case 200: {
+
+                                    Log.d(TAG, "UID: " + res.getString("id"));
+
+                                    SharedPreferences prefs = getSharedPreferences(getString(R.string.private_file), MODE_PRIVATE);
+                                    SharedPreferences.Editor editor = prefs.edit();
+                                    editor.putString("uid", res.getString("id"));
+                                    editor.putString("first_token", "false");
+                                    editor.commit();
 
 
-            } catch (MalformedURLException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (org.json.JSONException e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
+                                    Intent intent = new Intent(SignUpForm.this, InboxActivity.class);
+                                    startActivity(intent);
+                                    finish();
+                                    break;
+                                }
+                                default: {
+                                    throw new org.json.JSONException("409");
+                                }
+                            }
 
-//        protected void onPostExecute() {
-//            progress.dismiss();
-//        }
-
-    }
-
-    private class PutClass extends AsyncTask<Bundle, Void, Void> {
-
-        private Context context;
-
-        public PutClass(Context c){
-            this.context = c;
-        }
-
-        protected void onPreExecute(){
-            progress= new ProgressDialog(this.context);
-            progress.setMessage("Loading");
-            progress.show();
-        }
-
-        @Override
-        protected Void doInBackground(Bundle... params) {
-            try {
-                Bundle b = params[0];
-                String call = getString(R.string.server_url) + getString(account) + "/" + b.getString("email");
-                URL url = new URL(call);
-
-                HttpURLConnection connection = (HttpURLConnection)url.openConnection();
-                connection.setRequestMethod("PUT");
-                connection.setRequestProperty("Content-Type", "application/json");
-                connection.setRequestProperty("Accept", "application/json");
-                connection.setDoOutput(true);
-
-                Log.d(TAG, "params:" +  params.toString());
-                Log.d(TAG, "b:" +  b.getString("fname"));
-
-                final JSONObject account   = new JSONObject();
-                account.put("first_name", b.getString("fname"));
-                account.put("last_name", b.getString("lname"));
-                account.put("email", b.getString("email"));
-                account.put("org", b.getString("org"));
-                account.put("confirm", "true");
-                account.put("band", b.getString("band"));
-
-                DataOutputStream dStream = new DataOutputStream(connection.getOutputStream());
-                dStream.writeBytes(account.toString());
-                dStream.flush();
-                dStream.close();
-                int responseCode = connection.getResponseCode();
-
-                Log.d(TAG, "Sending 'PUT' request to URL : :" +  url);
-                Log.d(TAG, "PUT parameters : " + account.toString());
-                Log.d(TAG, "Response Code : " + responseCode);
-
-                final int response = responseCode;
-
-                SignUpForm.this.runOnUiThread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        //outputView.setText(output);
-                        if(response == 201 || response == 200){
-                            Intent intent = new Intent(SignUpForm.this, HomeActivity.class);
-                            intent.putExtra("account", account.toString());
-                            startActivity(intent);
-                            progress.dismiss();
+                        } catch (org.json.JSONException e) {
+                            e.printStackTrace();
+                            Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+                            onPostExecute();
                         }
 
                     }
                 });
 
+            } catch (IOException | org.json.JSONException e) {
+                e.printStackTrace();
+                runOnUiThread(new Runnable() {
 
-            } catch (MalformedURLException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (org.json.JSONException e) {
-                e.printStackTrace();
+                    @Override
+                    public void run() {
+                        onPostExecute();
+                        Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+
             }
             return null;
         }
 
-//        protected void onPutExecute() {
-//            progress.dismiss();
-//        }
+        protected void onPostExecute() {
+            progress.dismiss();
+        }
 
     }
 
 }
-

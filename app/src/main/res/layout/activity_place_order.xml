@@ -1,64 +1,107 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/activity_sign_up_form"
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.example.rohitvyavahare.project.SignUpForm">
+    android:fillViewport="true">
 
-    <EditText
-        android:id="@+id/EditToOrg"
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context="com.example.rohitvyavahare.project.PlaceOrderActivity">
+
+    <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/to_company"
-        android:layout_marginTop="20dp"
-        android:inputType="textNoSuggestions">
-    </EditText>
+        android:theme="@style/AppTheme.AppBarOverlay">
 
-    <EditText
-        android:id="@+id/EditItem"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/item"
-        android:layout_marginTop="20dp"
-        android:inputType="textNoSuggestions">
-    </EditText>
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            app:popupTheme="@style/AppTheme.PopupOverlay" />
 
-    <EditText
-        android:id="@+id/EditQuantity"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/quantity"
-        android:layout_marginTop="20dp"
-        android:inputType="numberDecimal">
-    </EditText>
+    </android.support.design.widget.AppBarLayout>
 
-    <EditText
-        android:id="@+id/EditMessage"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/message"
-        android:layout_marginTop="20dp"
-        android:inputType="textMultiLine"
-        android:lines="8"
-        android:minLines="5"
-        android:maxLines="10"
-        android:scrollbars="vertical"
-        android:background="@drawable/back">
-    </EditText>
+        <ViewSwitcher xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/my_switcher_3"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical">
 
-    <Button
-        android:id="@+id/PlaceOrder"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="Place an Order"
-        android:layout_marginTop="20dp"
-        android:textColor="#ffffff"
-        android:background="#00bfff"/>
+            <TextView
+                android:id="@+id/NoPairedOrg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="100sp"
+                android:text="@string/no_paired_orgs" />
 
-</TableLayout>
+            <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:id="@+id/activity_sign_up_form"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingBottom="@dimen/activity_vertical_margin"
+                android:paddingLeft="@dimen/activity_horizontal_margin"
+                android:paddingRight="@dimen/activity_horizontal_margin"
+                android:paddingTop="@dimen/activity_vertical_margin"
+                tools:context="com.example.rohitvyavahare.project.PlaceOrderActivity">
+
+                <TextView
+                    android:id="@+id/OrgName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="50sp"
+                    android:nextFocusDown="@+id/EditOrgs"
+                    android:textSize="20sp" />
+
+                <EditText
+                    android:id="@+id/EditItem"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20sp"
+                    android:hint="@string/item"
+                    android:inputType="textNoSuggestions" />
+
+                <EditText
+                    android:id="@+id/EditQuantity"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20sp"
+                    android:hint="@string/quantity"
+                    android:inputType="numberDecimal" />
+
+                <EditText
+                    android:id="@+id/EditMessage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20sp"
+                    android:background="@drawable/back"
+                    android:hint="@string/message"
+                    android:inputType="textMultiLine"
+                    android:lines="8"
+                    android:maxLines="10"
+                    android:minLines="5"
+                    android:scrollbars="vertical" />
+
+                <Button
+                    android:id="@+id/PlaceOrder"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20sp"
+                    android:background="#00bfff"
+                    android:gravity="center"
+                    android:text="Place an Order"
+                    android:textColor="#ffffff" />
+
+            </TableLayout>
+
+        </ViewSwitcher>
+
+</android.support.design.widget.CoordinatorLayout>
+</ScrollView>

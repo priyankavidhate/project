@@ -34,9 +34,18 @@ public class OrderFragment extends ListFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getActivity().setTitle("Inbox");
+        Bundle b = getArguments();
 
-        Log.e(TAG, "creating order fragment");
+        Log.d(TAG, "Type: " +  b.getString("type"));
+
+        if(b.getString("type").equals("inbox")) {
+            getActivity().setTitle("Inbox");
+        }
+        else{
+            getActivity().setTitle("Outbox");
+        }
+
+        Log.d(TAG, "creating order fragment");
 
         // We need to use a different list item layout for devices older than Honeycomb
         int layout = Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB ?
@@ -44,16 +53,24 @@ public class OrderFragment extends ListFragment {
 
         try{
 
-            Bundle b = getArguments();
             ArrayList<String> list = b.getStringArrayList("list");
             for(String str : list) {
                 JSONObject obj = new JSONObject(str);
                 obj = obj.getJSONObject("value");
-                arr.add(obj.getString("from") + "-" + obj.getString("id"));
+                if(b.getString("type").equals("inbox")) {
+                    Log.d(TAG, "id: " + obj.getString("id"));
+                    arr.add(obj.getString("from") + " - " + obj.getString("id"));
+                }
+                else {
+                    arr.add(obj.getString("to") + " - " + obj.getString("id"));
+
+                }
+            }
+            if(list.size() < 1) {
+                Toast.makeText(getActivity(), "You don't have any orders in inbox", Toast.LENGTH_SHORT).show();
             }
 
-            Log.e(TAG, "got to: " + arr.get(0));
-            // Create an array adapter for the list view, using the Ipsum headlines array
+            Log.d(TAG, "setListAdapter");
             setListAdapter(new ArrayAdapter<>(getActivity(), layout, arr));
 
         }
@@ -68,13 +85,13 @@ public class OrderFragment extends ListFragment {
     public void onStart() {
         super.onStart();
 
-        Log.e(TAG, "on start method of order fragment");
+        Log.d(TAG, "on start method of order fragment");
 
         // When in two-pane layout, set the listview to highlight the selected list item
         // (We do this during onStart because at the point the listview is available.)
-        if (getFragmentManager().findFragmentById(R.id.article_fragment) != null) {
-            getListView().setChoiceMode(ListView.CHOICE_MODE_SINGLE);
-        }
+//        if (getFragmentManager().findFragmentById(R.id.article_fragment) != null) {
+//            getListView().setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+//        }
     }
 
     @Override
@@ -84,7 +101,7 @@ public class OrderFragment extends ListFragment {
         // This makes sure that the container activity has implemented
         // the callback interface. If not, it throws an exception.
         try {
-            Log.e(TAG, "attaching");
+            Log.d(TAG, "attaching");
             mCallback = (OrderFragment.OnHeadlineSelectedListener) activity;
         } catch (ClassCastException e) {
             throw new ClassCastException(activity.toString()
@@ -94,7 +111,7 @@ public class OrderFragment extends ListFragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        Log.e(TAG, "onCreateView");
+        Log.d(TAG, "onCreateView");
         return super.onCreateView(inflater, container, savedInstanceState);
     }
 
@@ -102,21 +119,21 @@ public class OrderFragment extends ListFragment {
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        Log.e(TAG, "onViewCreated");
+        Log.d(TAG, "onViewCreated");
     }
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        Log.e(TAG, "onActivityCreated");
+        Log.d(TAG, "onActivityCreated");
 
     }
 
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
 
-        Log.e(TAG, "array element :" + arr.get(0));
+        Log.d(TAG, "array element :" + arr.get(0));
         // Notify the parent activity of selected item
         mCallback.onArticleSelected(position);
 

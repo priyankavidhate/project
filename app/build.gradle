@@ -1,7 +1,16 @@
 apply plugin: 'com.android.application'
+//apply plugin: 'com.google.gms.google-services'
 
 android {
-    compileSdkVersion 24
+    signingConfigs {
+        config {
+            keyAlias 'first build'
+            keyPassword 'rohitpune123'
+            storeFile file('/Users/rohitvyavahare/project/project.jks')
+            storePassword 'rohitpune123'
+        }
+    }
+    compileSdkVersion 23
     buildToolsVersion "24.0.2"
     defaultConfig {
         applicationId "com.example.rohitvyavahare.project"
@@ -15,29 +24,43 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.config
+        }
+        debug {
+            signingConfig signingConfigs.config
         }
     }
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile fileTree(include: ['*.jar'], dir: 'libs')
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-
     // Dependency for Google Sign-In
-
     // Dependency for roundImage
-
     // apache
 
-    compile 'com.google.android.gms:play-services-auth:9.6.1'
+    compile 'com.android.support:appcompat-v7:24.2.1'
+    // Google Sign In SDK (only required for Google Sign In)
+    compile 'com.google.android.gms:play-services-auth:9.8.0'
+    compile 'com.google.firebase:firebase-auth:9.8.0'
+    compile 'com.google.firebase:firebase-core:9.8.0'
+    compile 'com.google.firebase:firebase-storage:9.8.0'
+    compile 'com.google.firebase:firebase-messaging:9.8.0'
+//    compile 'com.google.android.gms:play-services-auth:9.6.1'
     compile 'de.hdodenhof:circleimageview:2.1.0'
     compile 'com.squareup.picasso:picasso:2.5.2'
     compile 'org.apache.httpcomponents:httpcore:4.4.1'
-    compile 'com.android.support:appcompat-v7:24.2.1'
-    compile 'com.android.support:design:24.2.1'
+//    compile 'com.android.support:appcompat-v7:24.2.1'
+    compile 'com.android.support:design:25.0.1'
     compile 'com.android.support:support-v4:24.2.1'
     compile 'com.android.support:recyclerview-v7:24.2.1'
     testCompile 'junit:junit:4.12'
+    compile 'com.google.android.gms:play-services-appindexing:9.8.0'
+    compile 'com.mikhaellopez:circularimageview:3.0.2'
+    compile 'com.amulyakhare:com.amulyakhare.textdrawable:1.0.1'
 }
+
+// ADD THIS AT THE BOTTOM
+apply plugin: 'com.google.gms.google-services'

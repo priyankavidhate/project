@@ -2,17 +2,26 @@ package com.example.rohitvyavahare.project;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.ContactsContract;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -20,84 +29,209 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 
-import static com.example.rohitvyavahare.project.R.string.account;
-
-public class AddEmployeeActivity extends AppCompatActivity {
+public class AddEmployeeActivity extends AppCompatActivity
+        implements View.OnClickListener {
 
     private ProgressDialog progress;
     private static final String TAG = "AddEmployeeActivity";
     Button button;
     CheckBox ch1;
+    ArrayList<CharSequence> numbers = new ArrayList<>();
+    private SharedPreferences prefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        try {
-            super.onCreate(savedInstanceState);
-            setTitle("Add an employee");
-            setContentView(R.layout.activity_add_employee);
-            final JSONObject act = new JSONObject(getIntent().getStringExtra("account"));
+        super.onCreate(savedInstanceState);
+        setTitle("Add an employee");
+        setContentView(R.layout.activity_add_employee);
 
-            button = (Button) findViewById(R.id.AddEmployee);
-            button.setOnClickListener(new View.OnClickListener() {
+        Toolbar toolbar;
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        try{
+
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+
+        }
+        catch (java.lang.NullPointerException e){
+            e.printStackTrace();
+        }
 
 
-                @Override
-                public void onClick(View arg0) {
+        prefs = getSharedPreferences(getString(R.string.private_file), MODE_PRIVATE);
 
-                    try {
-                        JSONObject account = new JSONObject();
+        findViewById(R.id.AddEmployee).setOnClickListener(AddEmployeeActivity.this);
 
-                        ch1 = (CheckBox) findViewById(R.id.EmployeeBand);
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
+        startActivityForResult(intent, 1);
+    }
 
-                        if (ch1.isChecked()) {
-                            account.put("band", "2");
-                        } else {
-                            account.put("band", "3");
-                        }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
 
-                        boolean flag = true;
+        Intent intent = new Intent(AddEmployeeActivity.this, InboxActivity.class);
+        startActivity(intent);
 
-                        EditText editId = (EditText) findViewById(R.id.EditEmployeeId);
-                        if (editId.getText().toString().trim().equals("")) {
-                            editId.setError("Email id is required!");
-                            flag = false;
-                        }
+        return super.onOptionsItemSelected(item);
+    }
 
-                        if (!editId.getText().toString().toLowerCase().contains("gmail")) {
-                            editId.setError("Right now we support only gmail accounts");
-                            Toast.makeText(AddEmployeeActivity.this, "Sorry, Right now we support only gmail accounts", Toast.LENGTH_SHORT).show();
-                            flag = false;
-                        }
 
-                        EditText editRole = (EditText) findViewById(R.id.EditEmployeeRole);
-                        if (editRole.getText().toString().trim().equals("")) {
-                            editRole.setError("Employee role is required!");
-                            flag = false;
-                        }
-                        if(flag){
-                            account.put("email", editId.getText().toString().trim());
-                            Log.d(TAG, "org: " + act.getString("org"));
-                            account.put("org", act.getString("org"));
-                            account.put("first_name", "First Name");
-                            account.put("last_name", "Last Name");
-                            account.put("role", editRole.getText().toString().trim());
-                            account.put("confirm", "false");
-                            new PostClass(AddEmployeeActivity.this).execute(account);
-                            ch1.setChecked(false);
-                            editRole.setText("");
-                            editId.setText("");
-                        }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (data != null) {
 
-                    } catch (org.json.JSONException e) {
-                        e.printStackTrace();
+            progress = new ProgressDialog(this);
+            progress.setMessage("Loading");
+            progress.show();
+            if (numbers.size() > 0) {
+                numbers.clear();
+            }
+
+
+            Uri uri = data.getData();
+
+            if (uri != null) {
+                Cursor c = null;
+                try {
+                    c = getContentResolver().query(uri, new String[]{
+                                    ContactsContract.CommonDataKinds.Phone.NUMBER,
+                                    ContactsContract.CommonDataKinds.Phone.TYPE},
+                            null, null, null);
+
+                    if (c != null && c.moveToFirst()) {
+                        Log.d(TAG, "Number:" + c.toString());
+                        String number = c.getString(0);
+                        int type = c.getInt(1);
+                        numbers.add(number);
+                    }
+                } finally {
+                    if (c != null) {
+                        c.close();
+                        progress.dismiss();
+                        handleData();
                     }
                 }
-            });
-        }catch (org.json.JSONException e) {
+            }
+        }
+    }
+
+    private void handleData() {
+
+        final CharSequence contact[] = numbers.toArray(new CharSequence[numbers.size()]);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Pick a number");
+        builder.setItems(contact, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+                EditText employeeNumber = (EditText) findViewById(R.id.EditEmployeeId);
+                String selectedNumber = contact[which].toString();
+                if (selectedNumber.length() == 10) {
+                    selectedNumber = "+91" + selectedNumber;
+                    employeeNumber.setText(selectedNumber);
+                } else {
+                    employeeNumber.setText(selectedNumber);
+                }
+
+            }
+        });
+        builder.show();
+
+    }
+
+    @Override
+    public void onClick(View v) {
+
+        try {
+
+            int i = v.getId();
+            switch (i) {
+                case R.id.AddEmployee: {
+                    JSONObject account = new JSONObject();
+
+                    ch1 = (CheckBox) findViewById(R.id.EmployeeBand);
+
+                    if (ch1.isChecked()) {
+                        account.put("band", "2");
+                    } else {
+                        account.put("band", "3");
+                    }
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle("Add comment");
+                    builder.setTitle("Error");
+                    builder.setMessage(getString(R.string.empty_msg_no_default_org_pair_org));
+                    builder.setCancelable(true);
+                    builder.setNeutralButton(android.R.string.ok,
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+                                    dialog.cancel();
+                                }
+                            });
+
+
+                    boolean flag = true;
+
+                    EditText editId = (EditText) findViewById(R.id.EditEmployeeId);
+
+                    Log.d(TAG, "editId Length " + editId.getText().toString().length());
+                    if (editId.getText().toString().trim().equals("") || editId.getText().toString().length() < 11 ) {
+                        editId.setError("Contact Number is required!");
+                        flag = false;
+                    }
+
+                    EditText editRole = (EditText) findViewById(R.id.EditEmployeeRole);
+                    if (editRole.getText().toString().trim().equals("")) {
+                        editRole.setError("Employee role is required!");
+                        flag = false;
+                    }
+                    if (flag) {
+                        StringBuilder stringBuilder = new StringBuilder(editId.getText().toString().trim());
+                        stringBuilder.deleteCharAt(0);
+                        account.put("phone_number", stringBuilder.toString());
+                        Log.d(TAG, "phone_number: " + stringBuilder.toString());
+
+                        String default_org = prefs.getString("default_org", "null");
+                        if (!default_org.equals("null")) {
+                            JSONObject d_org = new JSONObject(default_org);
+                            if(d_org.has("id") && d_org.has("name")){
+                                account.put("org_id", d_org.getString("id"));
+                                account.put("org_name", d_org.getString("name"));
+                            }
+                            else {
+                                AlertDialog alert11 = builder.create();
+                                alert11.show();
+                            }
+
+                        }
+                        else {
+                            AlertDialog alert11 = builder.create();
+                            alert11.show();
+                        }
+
+                        account.put("role", editRole.getText().toString().trim());
+                        new PostClass(AddEmployeeActivity.this).execute(account);
+                        ch1.setChecked(false);
+                        editRole.setText("");
+                        editId.setText("");
+                    }
+
+
+                }
+            }
+        } catch (JSONException e) {
             e.printStackTrace();
+
         }
     }
 
@@ -105,7 +239,7 @@ public class AddEmployeeActivity extends AppCompatActivity {
 
         private Context context;
 
-        public PostClass(Context c) {
+        PostClass(Context c) {
             this.context = c;
         }
 
@@ -119,17 +253,32 @@ public class AddEmployeeActivity extends AppCompatActivity {
         protected Void doInBackground(JSONObject... params) {
             try {
 
-                String call = getString(R.string.server_url) + getString(account);
-                Log.d(TAG, "url:" + call);
-                URL url = new URL(call);
+
+                Uri uri = new Uri.Builder()
+                        .scheme("http")
+                        .encodedAuthority(getString(R.string.server_ur_templ))
+                        .path(getString(R.string.add_employee_endpoint))
+                        .build();
+                //@TODO add band as query parameter
+
+                URL url = new URL(uri.toString());
+                Log.d(TAG, "url:" + url.toString());
+
+                String auth = prefs.getString("uid", "null");
+
+                if (auth.equals("null")) {
+                    onPostExecute();
+                    //@TODO add alert
+                }
+
+                //TODO add id to from feild
 
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("POST");
                 connection.setRequestProperty("Content-Type", "application/json");
                 connection.setRequestProperty("Accept", "application/json");
+                connection.setRequestProperty("Authorization", auth);
                 connection.setDoOutput(true);
-
-                Log.d(TAG, "params:" + params.toString());
 
                 final JSONObject account = params[0];
 
@@ -150,10 +299,9 @@ public class AddEmployeeActivity extends AppCompatActivity {
                 String line;
                 BufferedReader br;
 
-                try{
+                try {
                     br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                }
-                catch (IOException ioe) {
+                } catch (IOException ioe) {
                     br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
                 }
 
@@ -179,12 +327,8 @@ public class AddEmployeeActivity extends AppCompatActivity {
                             }
 
                             case 409: {
-                                if (sb.toString().toLowerCase().contains("org")) {
-                                    Toast.makeText(context, "Employee already exist in your organization", Toast.LENGTH_SHORT).show();
-                                } else {
-                                    String msg = "Opsss Employee already exist with another org, Right now we don't support for person belonging to multiple org";
-                                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
-                                }
+
+                                Toast.makeText(context, "Employee already exist in your organization", Toast.LENGTH_SHORT).show();
                                 break;
                             }
 
@@ -197,14 +341,17 @@ public class AddEmployeeActivity extends AppCompatActivity {
                     }
                 });
 
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-                Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
-                onPostExecute();
             } catch (IOException e) {
-                Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
-                onPostExecute();
                 e.printStackTrace();
+                runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        onPostExecute();
+                        Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+                    }
+                });
+                onPostExecute();
             }
             return null;
         }

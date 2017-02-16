@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Project</string>
-    <string name="title_text">Welcome to\nProject</string>
+    <string name="title_text">Welcome to\n The Project</string>
     <!-- Sign-in status messages -->
     <string name="signed_in_fmt">Signed in as: %s</string>
     <string name="signed_in">Signed in</string>
@@ -16,28 +16,75 @@
     <string name="auth_code_fmt">Auth Code: %s</string>
     <string name="id_token_fmt">ID Token: %s</string>
 
+    <string name="auth_failed">"Something went wrong please again later"</string>
+
     <!-- Google Play Services error for Toast -->
     <string name="play_services_error_fmt">Google Play Services Error: %i</string>
 
     <!-- Button labels -->
     <string name="sign_out">Sign Out</string>
     <string name="disconnect">Disconnect</string>
-    <string name="refresh_token">Get Fresh Token</string>
+    <string name="refresh_token">refreshToken</string>
+    <string name="last_active">Last Active</string>
 
     <!-- sign up form -->
     <string name="first_name">First Name*</string>
+    <string name="full_name"> Full Name*</string>
     <string name="last_name">Last Name*</string>
+    <string name="answer"> Answer*</string>
     <string name="email_id">email id</string>
-    <string name="org_name">Organization*</string>
+    <string name="contact_number">contact_number</string>
+    <string name="phone_number">phone_number</string>
+    <string name="confirm">confirm</string>
+
     <string name="title_activity_home">HomeActivity</string>
     <string name="employee_role">Role of an Employee</string>
+    <string name="profile_pic">Add Profile Pic</string>
+
+    <!-- org creation -->
+    <string name="org_name">Organization*</string>
+    <string name="org_branch">Branch</string>
+    <string name="org_department">Department</string>
+    <string name="org_tag_name">Tag Name*</string>
+    <string name="org_address">Address*</string>
+    <string name="org_city">City*</string>
+    <string name="org_zip">Zip*</string>
+    <string name="org_state">State*</string>
+    <string name="org_country">Country*</string>
 
     <!-- server endpoints -->
-    <string name="server_url">http://10.0.2.2:5000</string>
+    <!--9.52.157.195-->
+    <!--10.0.0.109:5001-->
+    <string name="server_url">https://project-backend-2.mybluemix.net</string>
+    <string name="server_ur_templ">project-backend-2.mybluemix.net</string>
     <string name="account">/account</string>
+    <string name="add_employee_endpoint">/add/employee</string>
+    <string name="sign_up">/onboard</string>
     <string name="orders">/orders</string>
-    <string name="order">/order</string>
+    <string name="order">order</string>
     <string name="org">/org</string>
+    <string name="tag">/tag</string>
+    <string name="orgs">orgs</string>
+    <string name="get_outbox">/outbox</string>
+    <string name="authy">/authy/verify</string>
+    <string name="code">/authy/verify/code</string>
+    <string name="search_org">/search/org</string>
+    <string name="pair_org_request">/org/pair/</string>
+    <string name="firebase_token">/firebaseToken</string>
+    <string name="get_pending_orgs">/org/pair/pending/</string>
+    <string name="get_requested_orgs">/org/pair/requested/</string>
+    <string name="perform_action_on_org">/org/pair/action</string>
+    <string name="record_activity">/record/activity</string>
+    <string name="feedback">/feedback</string>
+    <string name="get_paired_orgs">/org/pair</string>
+
+    <!-- home activity -->
+    <string name="empty_msg_no_default_org_pair_org">You are not part of any organization, Please create an organization or become part of an organization</string>
+    <string name="pair_org_no_request">No requests are pending, please click + button at the bottom to make request to another organization</string>
+    <string name="not_authorized_view">You are not authorized to view this page</string>
+    <string name="no_org_msg">You are not part of any organization, Please create organization by clicking drawer at left corner of screen or ask an organization to add you as an employee</string>
+    <string name="no_outbox_order_msg">You have not made any orders, Please click + sign at the bottom right side of the screen to place an order</string>
+
 
     <!-- home activity -->
     <string name="inbox">Inbox</string>
@@ -45,8 +92,12 @@
     <string name="add_employee">Add Employee</string>
     <string name="place_order">Place Order</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <!-- setting activity -->
+    <string name="hard_reload">Hard Reload</string>
+    <string name="hard_reload_pair_org">hard_reload_pair_org</string>
+    <string name="hard_reload_outbox">hard_reload_outbox</string>
+    <string name="hard_reload_inbox">hard_reload_inbox</string>
 
 
     <!-- place an order activity -->
@@ -62,4 +113,123 @@
     <string name="cancelled">Order Cancelled</string>
     <string name="sumbit">sumbit</string>
 
+    <!-- google sign in -->
+    <string name="client_id">655096337332-m4hhrbs3c8gsj20mjtjahcl7c1o7ern8.apps.googleusercontent.com</string>
+    <string name="google_status_fmt">Google User: %s</string>
+    <string name="firebase_status_fmt">Firebase User: %s</string>
+    <string name="firebase_storage">gs://project-ae9b7.appspot.com</string>
+
+    <!-- Auth0 -->
+    <string name="CC">1</string>
+    <string name="plus_sign">+</string>
+    <string name="sign_in_msg">Enter your number to sign in or create an account</string>
+    <string name="disclamer_msg">Project will send you a one time SMS message to verify your number. Carrier SMS charges may apply</string>
+    <string name="sent_msg">We have sent an SMS with a code to the number </string>
+    <string name="verification_msg">To complete your phone verification, please enter 6-digit activation code</string>
+
+    <!-- notification -->
+    <string name="differnet_org_notification_msg">Notification is not for current organization, Please change your organization to</string>
+
+    <!-- pair org -->
+    <string name="app_label">Search Org</string>
+    <string name="search_hint">Tag name or Org Name</string>
+    <string name="pair_org_no_deafult_org_msg">Please associate organization to your account to use this feature</string>
+    <string name="incoming_request">incoming_pair_org_request</string>
+    <string name="outgoing_request">outgoing_pair_org_request</string>
+    <string name="paired_orgs">paired_orgs</string>
+    <string name="no_paired_orgs">Your organization is not paired with any other organization.</string>
+
+
+    <string-array name="que_array">
+        <item>What was your childhood nickname?</item>
+        <!--<item>What is the name of your favorite childhood friend?</item>-->
+        <item>What is your favorite team?</item>
+        <item>What is your favorite movie?</item>
+        <item>In what town was your first job?</item>
+        <!--<item>What was the name of the company where you had your first job?</item>>-->
+    </string-array>
+
+    <string-array name="Country">
+        <item>India</item>
+    </string-array>
+
+    <string-array name="State">
+        <item>Andaman Nicobar</item>
+        <item>Goa</item>
+        <item>Andhra Pradesh</item>
+        <item>Gujarat</item>
+        <item>Arunanchal Pradesh</item>
+        <item>Haryana</item>
+        <item>Assam</item>
+        <item>Himachal Pradesh</item>
+        <item>Bihar</item>
+        <item>Jammu Kashmir</item>
+        <item>Chandigarh</item>
+        <item>Jharkhand</item>
+        <item>Chattisgarh</item>
+        <item>Karnataka</item>
+        <item>Dadar Nagar Haveli</item>
+        <item>Kerala</item>
+        <item>Daman Diu</item>
+        <item>Lakshwdeep</item>
+        <item>Madhya Pradesh</item>
+        <item>Punjab</item>
+        <item>Maharashtra</item>
+        <item>Rajasthan</item>
+        <item>Manipur</item>
+        <item>Sikkim</item>
+        <item>Meghalaya</item>
+        <item>Tamil Nadu</item>
+        <item>Mizoram</item>
+        <item>Tripura</item>
+        <item>Nagaland</item>
+        <item>Uttar Pradesh</item>
+        <item>New Delhi</item>
+        <item>Uttaranchal</item>
+        <item>Orissa</item>
+        <item>West Bengal</item>
+        <item>Pondicherry</item>
+    </string-array>
+
+    <string name="private_file">655096337332</string>
+    <string name="title_activity_side_bar">SideBarActivity</string>
+    <string name="title_activity_inbox">Inbox</string>
+    <string name="title_activity_create_org">Create Organization</string>
+    <string name="title_activity_pair_org">Pair Organization</string>
+    <string name="title_activity_orders">Orders</string>
+    <string name="title_activity_order_details">Order Details</string>
+    <string name="title_activity_search_contact">Search Contact</string>
+    <string name="title_activity_add_employee">Add an Employee</string>
+    <string name="title_activity_place_order">Plan an Order</string>
+    <string name="title_activity_setting">Settings</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+
+
+    <!--tabs and navigation drawer -->
+    <!-- Toolbar titles -->
+    <string name="toolbar_title_home">Home</string>
+    <string name="toolbar_title_explore">Explore</string>
+    <string name="other_activity">Other Activity</string>
+    <string name="title_activity_outbox">Outbox</string>
+    <string name="title_activity_search_org">Search Organizations</string>
+
+    <!-- Navigation Drawer -->
+    <string name="nav_drawer_item_home">Home</string>
+    <string name="nav_drawer_item_explore">Explore</string>
+    <string name="nav_drawer_help_and_feedback"><![CDATA[Help & feedback]]></string>
+    <string name="nav_drawer_about">About</string>
+    <string name="navigation_drawer_opened">The navigation drawer is opened</string>
+    <string name="navigation_drawer_closed">The navigation drawer is closed</string>
+    <string name="tag_nav_drawer_main_entry">nav_drawer_main_entry</string>
+    <string name="tag_nav_drawer_special_entry">nav_drawer_special_entry</string>
+    <string name="tools_text_account_information_username">Username</string>
+    <string name="tools_text_account_information_email">user@mail.com</string>
+
+    <!-- Typeface names -->
+    <string name="typeface_roboto_regular">Roboto-Regular</string>
+    <string name="typeface_roboto_medium">Roboto-Medium</string>
 </resources>
