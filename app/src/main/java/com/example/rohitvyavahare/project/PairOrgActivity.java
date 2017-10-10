@@ -148,9 +148,10 @@ public class PairOrgActivity extends AppCompatActivity
             Log.d(TAG, "d_org: " + d_org.toString());
 
 
-            if (!default_org.equals("null") && d_org.has("name")) {
-                pair_org_request = prefs.getString(d_org.getString("name") + R.string.incoming_request, "null");
-                Log.d(TAG, "pair_org_request :" + pair_org_request + " and default org name :" + d_org.getString("name"));
+            if (!default_org.equals("null") && d_org.has("tag")) {
+//                pair_org_request = prefs.getString(d_org.getString("name") + R.string.incoming_request, "null");
+                pair_org_request = prefs.getString(d_org.getString("tag") + getString(R.string.incoming_request), "null");
+                Log.d(TAG, "pair_org_request :" + pair_org_request + " and default org tag :" + d_org.getString("tag"));
             }
 
             // init the list view and its adapter
@@ -306,7 +307,7 @@ public class PairOrgActivity extends AppCompatActivity
 
                             @Override
                             public void run() {
-                                Toast.makeText(PairOrgActivity.this, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(PairOrgActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
@@ -337,7 +338,7 @@ public class PairOrgActivity extends AppCompatActivity
 
                             @Override
                             public void run() {
-                                Toast.makeText(PairOrgActivity.this, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(PairOrgActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
@@ -376,7 +377,7 @@ public class PairOrgActivity extends AppCompatActivity
 
         private String data;
 
-        public ListData(String data) {
+        ListData(String data) {
             this.data = data;
         }
 
@@ -425,6 +426,7 @@ public class PairOrgActivity extends AppCompatActivity
             case R.id.nav_inbox: {
 
                 intent = new Intent(PairOrgActivity.this, InboxActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
                 break;
 
@@ -433,6 +435,7 @@ public class PairOrgActivity extends AppCompatActivity
             case R.id.nav_outbox: {
 
                 intent = new Intent(PairOrgActivity.this, OutboxActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
                 break;
 
@@ -441,6 +444,7 @@ public class PairOrgActivity extends AppCompatActivity
             case R.id.nav_add_employee: {
 
                 intent = new Intent(PairOrgActivity.this, AddEmployeeActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
                 break;
 
@@ -449,6 +453,7 @@ public class PairOrgActivity extends AppCompatActivity
             case R.id.nav_pair_prg: {
 
                 intent = new Intent(PairOrgActivity.this, PairOrgActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
                 break;
 
@@ -457,6 +462,7 @@ public class PairOrgActivity extends AppCompatActivity
             case R.id.nav_add_org: {
 
                 intent = new Intent(PairOrgActivity.this, CreateOrgActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
                 break;
 
@@ -465,6 +471,7 @@ public class PairOrgActivity extends AppCompatActivity
             case R.id.nav_settings: {
 
                 intent = new Intent(PairOrgActivity.this, SettingActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
                 break;
 
@@ -482,7 +489,7 @@ public class PairOrgActivity extends AppCompatActivity
 
         private final Context context;
 
-        public GetClass(Context c) {
+        GetClass(Context c) {
             context = c;
         }
 
@@ -525,12 +532,11 @@ public class PairOrgActivity extends AppCompatActivity
                 connection.setRequestProperty("Accept", "application/json");
                 connection.setRequestProperty("Authorization", auth);
 
-                final int responseCode = connection.getResponseCode();
-                final int response = responseCode;
+                final int response = connection.getResponseCode();
 
                 Log.d(TAG, "Sending 'GET' request to URL : :" + url);
                 Log.d(TAG, "Get parameters : " + prefs.getString("default_org", "null"));
-                Log.d(TAG, "Response Code : " + responseCode);
+                Log.d(TAG, "Response Code : " + response);
 
                 final StringBuilder sb = new StringBuilder();
                 String line;
@@ -560,7 +566,8 @@ public class PairOrgActivity extends AppCompatActivity
                             case 200: {
                                 try {
                                     JSONArray arr = new JSONArray(sb.toString());
-                                    editor.putString(obj.getString("name") + R.string.incoming_request, arr.toString());
+//                                    editor.putString(obj.getString("name") + getString(R.string.incoming_request), arr.toString());
+                                    editor.putString(obj.getString("tag") + getString(R.string.incoming_request), arr.toString());
                                     editor.putString(getString(R.string.hard_reload_pair_org), "false");
                                     editor.commit();
                                     Intent intent = getIntent();
@@ -591,7 +598,7 @@ public class PairOrgActivity extends AppCompatActivity
                     @Override
                     public void run() {
                         onPostExecute();
-                        Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
                 onPostExecute();
@@ -609,7 +616,7 @@ public class PairOrgActivity extends AppCompatActivity
 
         private Context context;
 
-        public PostClass(Context c) {
+        PostClass(Context c) {
             this.context = c;
         }
 
@@ -709,8 +716,9 @@ public class PairOrgActivity extends AppCompatActivity
                                         p_org = new JSONArray();
                                     }
 
-                                    if(body.has("action") && body.getString("action").equals("accept") && d_org.has("name")){
-                                        String paired_orgs = prefs.getString(d_org.getString("name") + R.string.paired_orgs, "null");
+                                    if(body.has("action") && body.getString("action").equals("accept") && d_org.has("tag")){
+//                                        String paired_orgs = prefs.getString(d_org.getString("name") + R.string.paired_orgs, "null");
+                                        String paired_orgs = prefs.getString(d_org.getString("tag") + getString(R.string.paired_orgs), "null");
                                         JSONArray arr ;
                                         if(paired_orgs.equals("null")){
                                             arr = new JSONArray();
@@ -720,14 +728,17 @@ public class PairOrgActivity extends AppCompatActivity
 
                                         }
                                         arr.put(body.get("first_org"));
-                                        editor.putString(d_org.getString("name") + R.string.paired_orgs, arr.toString());
+//                                        editor.putString(d_org.getString("name") + R.string.paired_orgs, arr.toString());
+                                        editor.putString(d_org.getString("tag") + getString(R.string.paired_orgs), arr.toString());
                                     }
 
-                                    editor.putString(d_org.getString("name") + R.string.incoming_request, p_org.toString());
+//                                    editor.putString(d_org.getString("name") + R.string.incoming_request, p_org.toString());
+                                    editor.putString(d_org.getString("tag") + getString(R.string.incoming_request), p_org.toString());
 
                                     editor.commit();
 
-                                    String temp = prefs.getString(d_org.getString("name") + R.string.paired_orgs, "null");
+//                                    String temp = prefs.getString(d_org.getString("name") + R.string.paired_orgs, "null")
+                                    String temp = prefs.getString(d_org.getString("tag") + getString(R.string.paired_orgs), "null");
                                     Log.d(TAG, "paired_orgs : " + temp);
 
                                     Intent intent = getIntent();
@@ -760,7 +771,7 @@ public class PairOrgActivity extends AppCompatActivity
                     @Override
                     public void run() {
                         onPostExecute();
-                        Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
 

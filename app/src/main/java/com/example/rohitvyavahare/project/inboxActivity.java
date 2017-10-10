@@ -1,16 +1,12 @@
 package com.example.rohitvyavahare.project;
 
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.Typeface;
-import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -19,167 +15,73 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.SpannableStringBuilder;
 import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.BaseAdapter;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.amulyakhare.textdrawable.TextDrawable;
-import com.amulyakhare.textdrawable.util.ColorGenerator;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.MobileAds;
 import com.mikhaellopez.circularimageview.CircularImageView;
+import com.rohitvyavahare.Data.Storage;
+import com.rohitvyavahare.extensions.Inbox.Adapter;
+import com.rohitvyavahare.extensions.Inbox.ListData;
+import com.rohitvyavahare.webservices.GetInbox;
+import com.rohitvyavahare.webservices.GetOrgs;
+import com.rohitvyavahare.webservices.GetPairedOrgs;
+import com.rohitvyavahare.webservices.PostTokenId;
+import com.rohitvyavahare.webservices.UpdateActivity;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-
-import static com.example.rohitvyavahare.project.R.string.inbox;
 
 public class InboxActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
-    // declare the color generator and drawable builder
-    private ColorGenerator mColorGenerator = ColorGenerator.MATERIAL;
-    private TextDrawable.IBuilder mDrawableBuilder;
-    private ProgressDialog progress;
     private static final String TAG = "InboxActivity";
     protected DrawerLayout drawer;
 
     // list of data items
-    private List<ListData> mDataList = new ArrayList<>();
-    private SharedPreferences prefs;
-    SharedPreferences.Editor editor;
-    Utils util = new Utils();
+    private List<ListData> inboxDataList = new ArrayList<>();
+    private Utils util;
     static Bitmap bitmap;
+    private TextView currentOrgName;
+    private Storage storage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_inbox);
-        RelativeLayout rl = (RelativeLayout) findViewById(R.id.rl1);
-        LayoutInflater layoutInflater = (LayoutInflater)
-                this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View layout = layoutInflater.inflate(R.layout.content_side_bar, null, true);
-        rl.addView(layout);
-        prefs = getSharedPreferences(getString(R.string.private_file), MODE_PRIVATE);
-        editor = prefs.edit();
 
-        Toolbar toolbar;
-        toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.setDrawerListener(toggle);
-        toggle.syncState();
+        util = new Utils();
+        storage = new Storage(this);
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
-        View hView = navigationView.getHeaderView(0);
-        TextView nav_user = (TextView) hView.findViewById(R.id.NavName);
-        String username = prefs.getString("user_name", "null");
+        enableLayout();
+        enableAdView();
+        enableToolBar();
+        enableNavigationView();
+        enableFloatingActionButton();
 
-        if (!username.equals("null")) {
-            nav_user.setText(util.capitalizeString(username));
-        }
+        setupDbPull();
+        setupRefreshToken();
+        setupActivityView();
+    }
 
-
-        CircularImageView usr_pic = (CircularImageView) hView.findViewById(R.id.ProfilePic);
-        String profile_pic = prefs.getString("profile_pic", "null");
-        if (!profile_pic.equals("null")) {
-
-            bitmap = util.StringToBitMap(profile_pic);
-            if (bitmap != null) {
-                usr_pic.setImageBitmap(bitmap);
-            }
-        }
-
-
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(InboxActivity.this, PlaceOrderActivity.class);
-                startActivity(intent);
-            }
-        });
-
-        mDrawableBuilder = TextDrawable.builder()
-                .round();
-
-
-        String last_active = prefs.getString(getString(R.string.last_active), "1");
-
-        Long time = Long.parseLong(last_active);
-        Long current_time = System.currentTimeMillis();
-        Long time_diff = current_time - time;
-
-        Log.d(TAG, "time : " + time);
-        Log.d(TAG, "current_time : " + current_time);
-        Log.d(TAG, "time_diff : " + time_diff);
-
-        if (time < 2 || time_diff > (86400000 * 7)) {
-            Log.d(TAG, "No acivity since : " + time);
-
-            final Context c = this.getApplicationContext();
-
-            AsyncTask.execute(new Runnable() {
-                @Override
-                public void run() {
-                    Utils util = new Utils();
-                    util.updateActivity(c);
-                }
-            });
-
-            editor.putString(getString(R.string.hard_reload_inbox), "true");
-            editor.putString(getString(R.string.hard_reload_outbox), "true");
-            editor.putString(getString(R.string.hard_reload_pair_org), "true");
-            editor.commit();
-
-        }
-
-        final String refreshToken = prefs.getString(getString(R.string.refresh_token), "null");
-        String first_token = prefs.getString("first_token", "null");
-
-        if (refreshToken.equals("null")) {
-            Log.d(TAG, "Refresh token is null");
-            editor.putString(getString(R.string.hard_reload_inbox), "true");
-            editor.commit();
-        } else if (first_token.equals("true")) {
-
-            final Context c = this.getApplicationContext();
-
-            AsyncTask.execute(new Runnable() {
-                @Override
-                public void run() {
-                    Utils util = new Utils();
-                    util.sendTokentoServer(refreshToken, prefs.getString("uid", "null"), c);
-                }
-            });
-
-            editor.putString("first_token", "false");
-            editor.commit();
-
-        }
-
+    private void setupActivityView() {
         Bundle bundle = getIntent().getExtras();
 
         if (bundle != null && bundle.getString("message") != null) {
@@ -200,179 +102,360 @@ public class InboxActivity extends AppCompatActivity
         } else {
             action();
         }
+    }
+
+    private void setupRefreshToken() {
+        try {
+            FirebaseToken token = new FirebaseToken();
+            String storedToken = storage.getRefreshToken();
+            if(token.verifyToken(storedToken) && storage.getFirstToken().equals("false")) {
+                Log.d(TAG, "Token present, no need to update");
+                return;
+            }
+            Log.d(TAG, "Got new token");
+            storage.setRefreshToken(token.getToken());
+            new PostTokenId(this, storage)
+                    .execute().get();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void setupDbPull() {
+        try {
+
+            String last_active = storage.getLastActive();
+            Long time = Long.parseLong(last_active);
+            Long current_time = System.currentTimeMillis();
+            Long timeDiff = current_time - time;
+
+            Log.d(TAG, "time : " + time);
+            Log.d(TAG, "current_time : " + current_time);
+            Log.d(TAG, "time_diff : " + timeDiff);
+
+            if (time < 2 || timeDiff > (86400000 * 7)) {
+                Log.d(TAG, "No acivity since : " + time);
+                new UpdateActivity(this, storage).execute().get();
+
+                storage.setHardResetInbox("true");
+                storage.setHardResetOutbox("true");
+                storage.setHardResetPairedOrgs("true");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
     }
 
-    private void action() {
+    private void enableNavigationView() {
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
+        View hView = navigationView.getHeaderView(0);
 
-        ListView listView = (ListView) findViewById(R.id.listView);
-        final TextView empty = (TextView) findViewById(R.id.empty);
-        final TextView currentOrgName = (TextView) findViewById(R.id.currentOrg);
+        TextView nav_user = (TextView) hView.findViewById(R.id.NavName);
+        String username = storage.getUserName();
 
-
-        String default_org = prefs.getString("default_org", "null");
-        String hard_reload = prefs.getString(getString(R.string.hard_reload_inbox), "null");
-
-        Log.d(TAG, "Hard reload :" + hard_reload);
-        Log.d(TAG, "Default org :" + default_org);
-        if (!default_org.equals("null") && !hard_reload.equals("null") && !hard_reload.equals("true")) {
-            try {
-                JSONObject org = new JSONObject(prefs.getString("default_org", "{type : null}"));
-                String string = prefs.getString(org.getString("id"), "null");
-                Log.d(TAG, "default org found: " + org);
-
-                Log.d(TAG, "default org data found: " + string);
-
-                if (org.has("name")) {
-                    StyleSpan boldStyle = new StyleSpan(Typeface.BOLD);
-                    Utils util = new Utils();
-                    util.setTextWithSpan(currentOrgName, "Current organization: " + org.getString("name"), org.getString("name"), boldStyle);
-                }
-
-                if (!string.equals("null")) {
-
-                    String[] inbox = string.split(",");
-                    for (String data : inbox) {
-                        mDataList.add(new ListData(data));
-                    }
-                    // init the list view and its adapter
-
-                    if (inbox.length > 0) {
-                        listView.setAdapter(new SampleAdapter());
-                        empty.setVisibility(View.INVISIBLE);
-
-                    } else {
-                        listView.setEmptyView(empty);
-                    }
-                } else if (org.has("type") && org.getString("type").equals("null")) {
-                    empty.setText(getString(R.string.no_org_msg));
-                } else {
-                    Log.d(TAG, "Empty Inbox");
-                    //new GetOrg(InboxActivity.this).execute(getIntent().getExtras());
-                }
-            } catch (org.json.JSONException e) {
-                e.printStackTrace();
-                Toast.makeText(this.getApplicationContext(), "Something went wrong while retrieving Inbox, Please try again", Toast.LENGTH_SHORT).show();
-            }
-        } else {
-            Log.d(TAG, "Empty Inbox, going to make GET request");
-            new GetOrg(InboxActivity.this).execute(getIntent().getExtras());
+        if (!username.equals("null")) {
+            nav_user.setText(util.capitalizeString(username));
         }
 
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        CircularImageView usr_pic = (CircularImageView) hView.findViewById(R.id.ProfilePic);
+        String profile_pic = storage.getProfilePic();
+        if (!profile_pic.equals("null")) {
+
+            bitmap = util.StringToBitMap(profile_pic);
+            if (bitmap != null) {
+                usr_pic.setImageBitmap(bitmap);
+            }
+        }
+    }
+
+    private void enableLayout() {
+        RelativeLayout rl = (RelativeLayout) findViewById(R.id.rl1);
+        LayoutInflater layoutInflater = (LayoutInflater)
+                this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        View layout = layoutInflater.inflate(R.layout.content_side_bar, null, true);
+        rl.addView(layout);
+        currentOrgName = (TextView) findViewById(R.id.currentOrg);
+    }
+
+    private void enableFloatingActionButton() {
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> parent, View view,
-                                    int position, long id) {
-
-                ListData data = mDataList.get(position);
-
-                String orders = prefs.getString(data.getData(), "null");
-
-                Log.d(TAG, "Clicked at position :" + position);
-                Bundle orderData = new Bundle();
-                Log.d(TAG, "Data :" + data.getData());
-                orderData.putString("orders", orders);
-                Log.d(TAG, "clicked org_name : " + data.getData());
-                orderData.putString("org_name", data.getData());
-                orderData.putString("type", "inbox");
-                Intent intent = new Intent(InboxActivity.this, OrdersActivity.class);
-                for (String key : orderData.keySet()) {
-                    Log.d(TAG, key + " is a key in the bundle");
-                }
-                intent.putExtras(orderData);
+            public void onClick(View view) {
+                Intent intent = new Intent(InboxActivity.this, PlaceOrderActivity.class);
                 startActivity(intent);
             }
         });
     }
 
-    private class SampleAdapter extends BaseAdapter {
+    private void enableToolBar() {
+        Toolbar toolbar;
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.setDrawerListener(toggle);
+        toggle.syncState();
+    }
 
-        @Override
-        public int getCount() {
-            return mDataList.size();
+    private void enableAdView() {
+        MobileAds.initialize(getApplicationContext(), getString(R.string.banner_app_id));
+
+        AdView mAdView = (AdView) findViewById(R.id.adView);
+        AdRequest adRequest;
+        if (BuildConfig.DEBUG) {
+            String android_id = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
+            String deviceId = md5(android_id).toUpperCase();
+            adRequest = new AdRequest.Builder()
+                    .addTestDevice(deviceId)
+                    .build();
+        } else {
+            adRequest = new AdRequest.Builder().build();
+
         }
+        mAdView.loadAd(adRequest);
+    }
 
-        @Override
-        public ListData getItem(int position) {
-            return mDataList.get(position);
+    private String md5(final String s) {
+        try {
+            // Create MD5 Hash
+            MessageDigest digest = java.security.MessageDigest
+                    .getInstance("MD5");
+            digest.update(s.getBytes());
+            byte messageDigest[] = digest.digest();
+
+            // Create Hex String
+            StringBuilder hexString = new StringBuilder();
+            for (Byte j : messageDigest) {
+                String h = Integer.toHexString(0xFF & j);
+                while (h.length() < 2)
+                    h = "0" + h;
+                hexString.append(h);
+            }
+            return hexString.toString();
+
+        } catch (NoSuchAlgorithmException e) {
+            Log.e(TAG, e.toString());
         }
+        return "";
+    }
 
-        @Override
-        public long getItemId(int position) {
-            return position;
-        }
+    private void action() {
+        try {
 
-        @Override
-        public View getView(final int position, View convertView, ViewGroup parent) {
-            final ViewHolder holder;
-            if (convertView == null) {
-                convertView = View.inflate(InboxActivity.this, R.layout.list_item_layout, null);
-                holder = new ViewHolder(convertView);
-                convertView.setTag(holder);
-            } else {
-                holder = (ViewHolder) convertView.getTag();
+            ListView listView = (ListView) findViewById(R.id.listView);
+            final TextView empty = (TextView) findViewById(R.id.empty);
+
+            // check any associated org is present
+
+            String hardReload = storage.getHardResetInbox();
+            Log.d(TAG, "Hard Reload Inbox value :" + hardReload);
+            if(hardReload.equals("null") || hardReload.equals("true")) {
+                Log.d(TAG, "hardReload true, going to make GET request");
+                handleGetOrgs();
+                return;
             }
 
-            ListData item = getItem(position);
-
-            // provide support for selected state
-            updateCheckedState(holder, item);
-            holder.textView.setText(item.data);
-
-            return convertView;
-        }
-
-        private void updateCheckedState(ViewHolder holder, ListData item) {
-
-            Log.d(TAG, "setting image view");
-            TextDrawable drawable = mDrawableBuilder.build(String.valueOf(item.data.charAt(0)), mColorGenerator.getColor(item.data));
-
-            Log.d(TAG, "item.data " + item.data);
-
-            String pic = prefs.getString(item.data + "_pic", "null");
-            if (!pic.equals("null") && !pic.equals("default")) {
-                holder.imageView.setImageBitmap(util.getBitmapFromURL(pic));
-            } else {
-                Log.d(TAG, "no org_pic");
-                holder.imageView.setImageDrawable(drawable);
+            if (storage.getAssociatedOrgs() == null || storage.getAssociatedOrgs().length() == 0) {
+                empty.setText(getString(R.string.no_org_msg));
+                listView.setEmptyView(empty);
+                return;
             }
 
+            if (storage.getDefaultOrg() == null) {
+                Log.d(TAG, "Empty Inbox, going to make GET request");
+                handleGetOrgs();
+                return;
+            }
 
-            holder.view.setBackgroundColor(Color.TRANSPARENT);
-            holder.checkIcon.setVisibility(View.GONE);
+            JSONObject defaultOrg = storage.getDefaultOrg();
+            JSONArray pairedOrgs = storage.getPairedOrgs(defaultOrg.getString("tag"));
+
+            hardReload = storage.getHardResetPairedOrgs();
+            Log.d(TAG, "Hard Reload Paired orgs value :" + hardReload);
+            if(hardReload.equals("null") || hardReload.equals("true")) {
+                Log.d(TAG, "hardReload true for Paired orgs, going to make GET request");
+                handleGetPairedOrgs();
+                pairedOrgs = storage.getPairedOrgs(defaultOrg.getString("tag"));
+            }
+
+            if (pairedOrgs == null || pairedOrgs.length() == 0) {
+                empty.setText(getString(R.string.no_paired_orgs));
+                listView.setEmptyView(empty);
+                return;
+            }
+
+            if (defaultOrg.has("name")) {
+                StyleSpan boldStyle = new StyleSpan(Typeface.BOLD);
+                String text = "Current organization: " + defaultOrg.getString("name");
+                SpannableStringBuilder sb = util.setTextWithSpan(text, defaultOrg.getString("name"), boldStyle);
+                this.currentOrgName.setText(sb);
+            }
+
+            Log.d(TAG, "default org found: " + defaultOrg.getString("name"));
+            Log.d(TAG, "Paired orgs :" + pairedOrgs.length());
+
+            int no = 0;
+
+            for (int i = 0; i < pairedOrgs.length(); i++) {
+
+                JSONObject pairedOrg = pairedOrgs.getJSONObject(i);
+                Log.d(TAG, "Paired org in consideration :" + pairedOrg.getString("name"));
+
+                if (!pairedOrg.has("name") || !pairedOrg.has("id") || !pairedOrg.has("tag")) {
+                    continue;
+                }
+                no = storage.getNumberOfNotifications(pairedOrg.getString("tag") + "inbox");
+                JSONArray ordersFromPairedOrg = storage.getOrdersFrom(pairedOrg.getString("tag"));
+
+                if(ordersFromPairedOrg == null || ordersFromPairedOrg.length() == 0) {
+                    Log.d(TAG, "No Orders from :" + pairedOrg.getString("tag"));
+                    continue;
+                }
+
+                Log.d(TAG, "Orders :" + ordersFromPairedOrg.length());
+
+                int count = util.countInPorgressOrders(ordersFromPairedOrg);
+                inboxDataList.add(new ListData(pairedOrg.getString("name"), pairedOrg.getString("tag"),
+                        pairedOrg.getString("org_pic"), count, no));
+            }
+            listView.setAdapter(new Adapter(InboxActivity.this, inboxDataList));
+            empty.setVisibility(View.INVISIBLE);
+
+            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view,
+                                        int position, long id) {
+                    try {
+                        ListData data = inboxDataList.get(position);
+                        String orders = storage.getOrdersFrom(data.getTag()).toString();
+
+                        Bundle orderData = new Bundle();
+                        orderData.putString("orders", orders);
+                        orderData.putString("org_name", data.getData());
+                        orderData.putString("org_tag", data.getTag());
+                        orderData.putString("type", "inbox");
+                        Intent intent = new Intent(InboxActivity.this, OrdersActivityV2.class);
+                        storage.setNumberOfNotifications(data.getTag() + "inbox", 0);
+
+
+                        Log.d(TAG, "Clicked at position :" + position);
+                        Log.d(TAG, "Data :" + data.getData());
+                        Log.d(TAG, "clicked org_name : " + data.getData());
+                        Log.d(TAG, "clicked org_tag : " + data.getTag());
+                        for (String key : orderData.keySet()) {
+                            Log.d(TAG, key + " is a key in the bundle");
+                        }
+
+                        intent.putExtras(orderData);
+                        startActivity(intent);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        showMessageOnUi("Something went wrong while retrieving Inbox, Please try again");
+                    }
+                }
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showMessageOnUi("Something went wrong while retrieving Inbox, Please try again");
         }
     }
 
-    private static class ViewHolder {
+    private void handleGetOrgs() {
+        try {
 
-        private View view;
+            Log.d(TAG, "Starting Get Orgs");
+            Bundle output;
 
-        private ImageView imageView;
+            output = new GetOrgs(this, storage).execute().get();
 
-        private TextView textView;
+            if (!output.getString("exception").equals("no_exception")) {
+                showMessageOnUi(output.getString("exception"));
+                return;
+            }
 
-        private ImageView checkIcon;
+            if (output.getBoolean("empty_view")) {
+                TextView empty = (TextView) findViewById(R.id.empty);
+                empty.setText(getString(R.string.no_org_msg));
+                ListView listView = (ListView) findViewById(R.id.listView);
+                listView.setEmptyView(empty);
+                return;
+            }
 
-        private ViewHolder(View view) {
-            this.view = view;
-            imageView = (ImageView) view.findViewById(R.id.imageView);
-            textView = (TextView) view.findViewById(R.id.textView);
-            checkIcon = (ImageView) view.findViewById(R.id.check_icon);
+            Log.d(TAG, "Setting hard rest inbox false");
+
+            storage.setHardResetInbox("false");
+
+            currentOrgName.setText(output.getString("current_org_name"));
+            handleGetInbox();
+        } catch (Exception e) {
+            e.printStackTrace();
+            showMessageOnUi("Something went wrong while retrieving organizations, Please try again");
         }
     }
 
-    private static class ListData {
+    private void handleGetInbox() {
+        try {
 
-        private String data;
+            Log.d(TAG, "Starting Get Inbox");
 
-        public ListData(String data) {
-            this.data = data;
+            Bundle output = new GetInbox(this, storage)
+                    .execute().get();
+
+            if (!output.getString("exception").equals("no_exception")) {
+                showMessageOnUi(output.getString("exception"));
+                return;
+            }
+
+            View empty = findViewById(R.id.empty);
+            ListView listView = (ListView) findViewById(R.id.listView);
+            if (empty != null)
+                listView.setEmptyView(empty);
+
+            handleGetPairedOrgs();
+
+            Intent intent = getIntent();
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            finish();
+            startActivity(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
+            showMessageOnUi("Something went wrong while retrieving inbox, Please try again");
         }
+    }
 
-        public String getData() {
-            return data;
+    private Bundle handleGetPairedOrgs() {
+
+        Log.d(TAG, "Starting Get Paired Orgs");
+        Bundle output = new Bundle();
+        try {
+            output = new GetPairedOrgs(this, storage)
+                    .execute().get();
+
+            if (!output.getString("exception").equals("no_exception")) {
+                return output;
+            }
+
+        } catch (Exception e) {
+            output.putString("exception", e.getMessage());
+            return output;
+
         }
+        return output;
+    }
 
+    private void showMessageOnUi(final String message) {
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+                Toast.makeText(InboxActivity.this, message, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override
@@ -413,378 +496,37 @@ public class InboxActivity extends AppCompatActivity
                 intent = new Intent(InboxActivity.this, InboxActivity.class);
                 startActivity(intent);
                 break;
-
             }
-
             case R.id.nav_outbox: {
-
                 intent = new Intent(InboxActivity.this, OutboxActivity.class);
                 startActivity(intent);
                 break;
-
             }
-
             case R.id.nav_add_employee: {
-
                 intent = new Intent(InboxActivity.this, AddEmployeeActivity.class);
                 startActivity(intent);
                 break;
-
             }
-
             case R.id.nav_pair_prg: {
-
                 intent = new Intent(InboxActivity.this, PairOrgActivity.class);
                 startActivity(intent);
                 break;
-
             }
-
             case R.id.nav_add_org: {
-
                 intent = new Intent(InboxActivity.this, CreateOrgActivity.class);
                 startActivity(intent);
                 break;
-
             }
-
             case R.id.nav_settings: {
 
                 intent = new Intent(InboxActivity.this, SettingActivity.class);
                 startActivity(intent);
                 break;
-
             }
-
-
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
-
-    private class GetClass extends AsyncTask<Bundle, Void, Void> {
-
-        private final Context context;
-
-        public GetClass(Context c) {
-            context = c;
-        }
-
-        protected void onPreExecute() {
-            progress = new ProgressDialog(this.context);
-            progress.setMessage("Loading");
-            progress.show();
-        }
-
-        @Override
-        protected Void doInBackground(Bundle... params) {
-            try {
-
-                Log.d(TAG, "In background job");
-
-                final JSONObject obj = new JSONObject(prefs.getString("default_org", "null"));
-
-                Log.d(TAG, "default org: " + obj.toString());
-
-
-                Uri uri = new Uri.Builder()
-                        .scheme("http")
-                        .encodedAuthority(getString(R.string.server_ur_templ))
-                        .path(getString(R.string.org))
-                        .appendPath(obj.getString("id"))
-                        .appendPath(getString(inbox))
-                        .build();
-                //@TODO add band as query parameter
-
-                URL url = new URL(uri.toString());
-                Log.d(TAG, "url:" + url.toString());
-
-                prefs = getSharedPreferences(getString(R.string.private_file), MODE_PRIVATE);
-                String auth = prefs.getString("uid", "null");
-
-                Log.d(TAG, "auth " + auth);
-                if (auth.equals("null")) {
-                    onPostExecute();
-                    //@TODO add alert
-                }
-
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setRequestMethod("GET");
-                connection.setRequestProperty("Content-Type", "application/json");
-                connection.setRequestProperty("Accept", "application/json");
-                connection.setRequestProperty("Authorization", auth);
-
-                final int responseCode = connection.getResponseCode();
-                final int response = responseCode;
-
-                Log.d(TAG, "Sending 'GET' request to URL : :" + url);
-                Log.d(TAG, "Get parameters : " + prefs.getString("default_org", "null"));
-                Log.d(TAG, "Response Code : " + responseCode);
-
-                final StringBuilder sb = new StringBuilder();
-                String line;
-                BufferedReader br;
-
-                try {
-                    br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                } catch (IOException ioe) {
-                    br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
-                }
-
-                while ((line = br.readLine()) != null) {
-                    sb.append(line + "\n");
-                }
-                br.close();
-
-                Log.d(TAG, "Response from GET :" + sb.toString());
-                final ListView listView = (ListView) findViewById(R.id.listView);
-                final View empty = findViewById(R.id.empty);
-
-                Utils util = new Utils();
-                util.getPairedOrgs(InboxActivity.this, obj.getString("id"), obj.getString("name"));
-                onPostExecute();
-
-                runOnUiThread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        switch (response) {
-                            case 200: {
-                                try {
-                                    JSONArray jArray = new JSONArray(sb.toString());
-                                    HashMap<String, JSONArray> map = new HashMap<>();
-                                    StringBuilder sb = new StringBuilder();
-                                    if (mDataList.size() > 0) {
-                                        mDataList.clear();
-                                    }
-                                    for (int i = 0; i < jArray.length(); ++i) {
-                                        JSONObject rec = jArray.getJSONObject(i);
-                                        rec = rec.getJSONObject("doc");
-                                        JSONObject value = rec.getJSONObject("value");
-                                        value.put("id", rec.getString("_id"));
-
-                                        Log.d(TAG, "Value :" + value.toString());
-
-                                        if (obj.getString("band").trim().equals("3")) {
-                                            if (value.getString("status").trim().equals("acknowledged")) {
-                                                if (map.containsKey(value.getString("from"))) {
-                                                    map.get(value.getString("from")).put(value);
-                                                } else {
-                                                    mDataList.add(new ListData(value.getString("from")));
-                                                    sb.append(value.getString("from")).append(",");
-                                                    JSONArray arr = new JSONArray();
-                                                    arr.put(value);
-                                                    map.put(value.getString("from"), arr);
-                                                }
-
-                                            }
-
-                                        } else {
-                                            if (map.containsKey(value.getString("from"))) {
-                                                map.get(value.getString("from")).put(value);
-                                            } else {
-                                                mDataList.add(new ListData(value.getString("from")));
-                                                sb.append(value.getString("from")).append(",");
-                                                JSONArray arr = new JSONArray();
-                                                arr.put(value);
-                                                map.put(value.getString("from"), arr);
-                                            }
-                                        }
-                                    }
-
-                                    Log.d(TAG, "Caching orgs :" + map.keySet());
-                                    for (String s : map.keySet()) {
-
-                                        Log.d(TAG, "Key :" + s);
-                                        Log.d(TAG, "Value for " + s + " :" + map.get(s).toString());
-
-                                        editor.putString(s, map.get(s).toString());
-                                    }
-                                    editor.putString(getString(R.string.hard_reload_inbox), "false");
-                                    editor.putString(obj.getString("id"), sb.toString());
-                                    editor.commit(); //TODO research on apply method
-
-                                    if (map.keySet().size() > 0) {
-                                        listView.setAdapter(new SampleAdapter());
-                                        empty.setVisibility(View.INVISIBLE);
-                                    } else {
-
-                                        listView.setEmptyView(empty);
-                                    }
-                                    editor.commit(); //TODO research on apply method
-                                    break;
-                                } catch (org.json.JSONException e) {
-                                    e.printStackTrace();
-                                    Toast.makeText(context, "Something went wrong while retrieving Inbox, Please try again", Toast.LENGTH_SHORT).show();
-                                    break;
-                                }
-                            }
-                            case 404: {
-                                editor.putString(getString(R.string.hard_reload_inbox), "false");
-                                editor.commit(); //TODO research on apply method
-                                Log.d(TAG, "404 response");
-                                if (empty != null)
-                                    listView.setEmptyView(empty);
-                                break;
-
-                            }
-                        }
-                    }
-                });
-
-            } catch (IOException | JSONException | NullPointerException e) {
-                e.printStackTrace();
-                runOnUiThread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        onPostExecute();
-                        Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
-                    }
-                });
-                onPostExecute();
-            }
-            return null;
-        }
-
-        protected void onPostExecute() {
-            progress.dismiss();
-        }
-
-    }
-
-    private class GetOrg extends AsyncTask<Bundle, Void, Void> {
-
-        private final Context context;
-
-        public GetOrg(Context c) {
-            context = c;
-        }
-
-        protected void onPreExecute() {
-            progress = new ProgressDialog(this.context);
-            progress.setMessage("Loading");
-            progress.show();
-        }
-
-        @Override
-        protected Void doInBackground(Bundle... params) {
-            try {
-
-                Log.d(TAG, "In background job");
-
-                Uri uri = new Uri.Builder()
-                        .scheme("http")
-                        .encodedAuthority(getString(R.string.server_ur_templ))
-                        .path(getString(R.string.account))
-                        .appendPath(prefs.getString("uid", "null"))
-                        .appendPath(getString(R.string.orgs))
-                        .build();
-
-                URL url = new URL(uri.toString());
-                Log.d(TAG, "url:" + url.toString());
-
-                String auth = prefs.getString("uid", "null");
-                if (auth.equals("null")) {
-                    onPostExecute();
-                    //@TODO add alert
-                }
-
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setRequestMethod("GET");
-                connection.setRequestProperty("Content-Type", "application/json");
-                connection.setRequestProperty("Accept", "application/json");
-                connection.setRequestProperty("Authorization", auth);
-
-                final int responseCode = connection.getResponseCode();
-                final int response = responseCode;
-
-                Log.d(TAG, "Sending 'GET' request to URL : :" + url);
-                Log.d(TAG, "Get parameters : " + prefs.getString("uid", "null"));
-                Log.d(TAG, "Response Code : " + responseCode);
-
-                final StringBuilder sb = new StringBuilder();
-                String line;
-                BufferedReader br;
-
-                try {
-                    br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                } catch (IOException ioe) {
-                    br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
-                }
-
-                while ((line = br.readLine()) != null) {
-                    sb.append(line + "\n");
-                }
-                br.close();
-
-                Log.d(TAG, "Response from GET :" + sb.toString());
-
-                runOnUiThread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        onPostExecute();
-                        switch (response) {
-                            case 200: {
-                                try {
-                                    JSONArray jArray = new JSONArray(sb.toString());
-                                    JSONArray orgs = new JSONArray();
-                                    for (int i = 0; i < jArray.length(); ++i) {
-                                        JSONObject rec = jArray.getJSONObject(i);
-                                        orgs.put(rec);
-                                    }
-
-                                    if (orgs.length() > 0) {
-                                        Log.d(TAG, "Caching orgs :" + orgs.toString());
-                                        SharedPreferences.Editor editor = prefs.edit();
-                                        editor.putString("orgs", orgs.toString());
-                                        editor.putString("default_org", orgs.get(0).toString());
-                                        editor.apply(); //TODO research on apply method
-                                        new GetClass(InboxActivity.this).execute(getIntent().getExtras());
-                                    } else {
-                                        TextView empty = (TextView) findViewById(R.id.empty);
-                                        empty.setText(getString(R.string.no_org_msg));
-                                        ListView listView = (ListView) findViewById(R.id.listView);
-                                        listView.setEmptyView(empty);
-                                    }
-
-                                    break;
-                                } catch (org.json.JSONException e) {
-                                    e.printStackTrace();
-                                    Toast.makeText(context, "Something went wrong while retrieving Inbox, Please try again", Toast.LENGTH_SHORT).show();
-                                    onPostExecute();
-                                    break;
-                                }
-                            }
-                            default: {
-                                Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
-                            }
-                        }
-                    }
-                });
-
-            } catch (IOException | NullPointerException e) {
-                e.printStackTrace();
-                runOnUiThread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        onPostExecute();
-                        Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
-                    }
-                });
-                onPostExecute();
-            }
-            return null;
-        }
-
-        protected void onPostExecute() {
-            progress.dismiss();
-        }
-
-    }
-
 }

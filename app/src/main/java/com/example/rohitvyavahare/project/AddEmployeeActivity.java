@@ -52,13 +52,12 @@ public class AddEmployeeActivity extends AppCompatActivity
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        try{
+        try {
 
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowHomeEnabled(true);
 
-        }
-        catch (java.lang.NullPointerException e){
+        } catch (java.lang.NullPointerException e) {
             e.printStackTrace();
         }
 
@@ -129,6 +128,14 @@ public class AddEmployeeActivity extends AppCompatActivity
         final CharSequence contact[] = numbers.toArray(new CharSequence[numbers.size()]);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                Intent intent = new Intent(AddEmployeeActivity.this, InboxActivity.class);
+                startActivity(intent);
+                finish();
+            }
+        });
         builder.setTitle("Pick a number");
         builder.setItems(contact, new DialogInterface.OnClickListener() {
             @Override
@@ -185,7 +192,7 @@ public class AddEmployeeActivity extends AppCompatActivity
                     EditText editId = (EditText) findViewById(R.id.EditEmployeeId);
 
                     Log.d(TAG, "editId Length " + editId.getText().toString().length());
-                    if (editId.getText().toString().trim().equals("") || editId.getText().toString().length() < 11 ) {
+                    if (editId.getText().toString().trim().equals("") || editId.getText().toString().length() < 11) {
                         editId.setError("Contact Number is required!");
                         flag = false;
                     }
@@ -204,17 +211,16 @@ public class AddEmployeeActivity extends AppCompatActivity
                         String default_org = prefs.getString("default_org", "null");
                         if (!default_org.equals("null")) {
                             JSONObject d_org = new JSONObject(default_org);
-                            if(d_org.has("id") && d_org.has("name")){
+                            if (d_org.has("id") && d_org.has("name") && d_org.has("tag")) {
                                 account.put("org_id", d_org.getString("id"));
                                 account.put("org_name", d_org.getString("name"));
-                            }
-                            else {
+                                account.put("org_tag", d_org.getString("tag"));
+                            } else {
                                 AlertDialog alert11 = builder.create();
                                 alert11.show();
                             }
 
-                        }
-                        else {
+                        } else {
                             AlertDialog alert11 = builder.create();
                             alert11.show();
                         }

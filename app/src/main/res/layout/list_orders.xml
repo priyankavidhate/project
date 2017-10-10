@@ -63,10 +63,14 @@
 
             <TextView
                 android:id="@+id/textView2"
-                android:layout_gravity="end"
-                android:textColor="#FF5733"
-                android:layout_column="1"
-                android:textSize="15sp" />
+                android:width="22sp"
+                android:layout_height="22sp"
+                android:layout_gravity="right"
+                android:background="@drawable/notification_circle"
+                android:gravity="center"
+                android:shadowRadius="15.0"
+                android:textColor="@android:color/white"
+                android:textSize="12sp" />
 
         </TableRow>
 

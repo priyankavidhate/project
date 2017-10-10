@@ -16,7 +16,13 @@
     <string name="auth_code_fmt">Auth Code: %s</string>
     <string name="id_token_fmt">ID Token: %s</string>
 
+    <!-- User -->
+    <string name="user_name">user_name</string>
+    <string name="user_profile_pic">profile_pic</string>
+    <string name="first_token">first_token</string>
     <string name="auth_failed">"Something went wrong please again later"</string>
+    <string name="default_org">default_org</string>
+    <string name="last_time_paired_orgs">Last Time Paired Orgs</string>
 
     <!-- Google Play Services error for Toast -->
     <string name="play_services_error_fmt">Google Play Services Error: %i</string>
@@ -52,11 +58,13 @@
     <string name="org_state">State*</string>
     <string name="org_country">Country*</string>
 
+    <string name="org_itmes">OrganizationItems</string>
+
     <!-- server endpoints -->
-    <!--9.52.157.195-->
-    <!--10.0.0.109:5001-->
+    <!--project-backend.mybluemix.net-->
+    <!--192.168.0.101:5001-->
     <string name="server_url">https://project-backend-2.mybluemix.net</string>
-    <string name="server_ur_templ">project-backend-2.mybluemix.net</string>
+    <string name="server_ur_templ">project-backend.mybluemix.net</string>
     <string name="account">/account</string>
     <string name="add_employee_endpoint">/add/employee</string>
     <string name="sign_up">/onboard</string>
@@ -77,6 +85,8 @@
     <string name="record_activity">/record/activity</string>
     <string name="feedback">/feedback</string>
     <string name="get_paired_orgs">/org/pair</string>
+    <string name="update_account">/account</string>
+    <string name="get_contacts">/org/employee/phone_number</string>
 
     <!-- home activity -->
     <string name="empty_msg_no_default_org_pair_org">You are not part of any organization, Please create an organization or become part of an organization</string>
@@ -129,6 +139,7 @@
 
     <!-- notification -->
     <string name="differnet_org_notification_msg">Notification is not for current organization, Please change your organization to</string>
+    <string name="number_of_notification">number-of-notification</string>
 
     <!-- pair org -->
     <string name="app_label">Search Org</string>
@@ -139,7 +150,6 @@
     <string name="paired_orgs">paired_orgs</string>
     <string name="no_paired_orgs">Your organization is not paired with any other organization.</string>
 
-
     <string-array name="que_array">
         <item>What was your childhood nickname?</item>
         <!--<item>What is the name of your favorite childhood friend?</item>-->
@@ -148,6 +158,9 @@
         <item>In what town was your first job?</item>
         <!--<item>What was the name of the company where you had your first job?</item>>-->
     </string-array>
+
+    <!-- create org -->
+    <string name="associated_orgs">Associated Organization</string>
 
     <string-array name="Country">
         <item>India</item>
@@ -202,6 +215,8 @@
     <string name="title_activity_add_employee">Add an Employee</string>
     <string name="title_activity_place_order">Plan an Order</string>
     <string name="title_activity_setting">Settings</string>
+    <string name="title_activity_edit_org">Edit Organization</string>
+    <string name="title_activity_view_org">View Organization</string>
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
@@ -232,4 +247,14 @@
     <!-- Typeface names -->
     <string name="typeface_roboto_regular">Roboto-Regular</string>
     <string name="typeface_roboto_medium">Roboto-Medium</string>
+
+    <!-- Typeface names -->
+    <string name="edit_org_no_permission">You don\'t have permission to edit org</string>
+
+    <string name="banner_ad_unit_id">ca-app-pub-9656373787556865/8354034038</string>
+    <string name="banner_app_id">ca-app-pub-9656373787556865~6877300833</string>
+    <string name="title_activity_org_items">Organization Items</string>
+
 </resources>
+
+

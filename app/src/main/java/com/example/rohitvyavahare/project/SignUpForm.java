@@ -25,6 +25,8 @@ import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.mikhaellopez.circularimageview.CircularImageView;
+import com.rohitvyavahare.Data.Storage;
+import com.rohitvyavahare.webservices.PostTokenId;
 
 import org.json.JSONObject;
 
@@ -43,12 +45,13 @@ public class SignUpForm extends AppCompatActivity
     private static final String TAG = "SignUpFromActivity";
     Bundle extras;
     private static final int SELECT_PICTURE = 1;
-    FirebaseStorage storage = FirebaseStorage.getInstance();
+    FirebaseStorage firebaseStorage = FirebaseStorage.getInstance();
     private UploadTask uploadTask;
     private Bitmap bitmap = null;
     private ProgressDialog mProgressDialog;
     private SharedPreferences prefs;
     private SharedPreferences.Editor editor;
+    private Storage storage;
 
 
     @Override
@@ -60,6 +63,7 @@ public class SignUpForm extends AppCompatActivity
         findViewById(R.id.EditProfilePic).setOnClickListener(SignUpForm.this);
         findViewById(R.id.btn_submit).setOnClickListener(SignUpForm.this);
         prefs = getSharedPreferences(getString(R.string.private_file), MODE_PRIVATE);
+        storage = new Storage(this);
     }
 
     @Override
@@ -101,7 +105,7 @@ public class SignUpForm extends AppCompatActivity
                     final Context c = this.getApplicationContext();
 
 
-                    StorageReference storageRef = storage.getReferenceFromUrl(getString(R.string.firebase_storage));
+                    StorageReference storageRef = firebaseStorage.getReferenceFromUrl(getString(R.string.firebase_storage));
                     StorageReference mountainsRef = storageRef.child(fullName);
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
@@ -138,6 +142,7 @@ public class SignUpForm extends AppCompatActivity
                             Log.d(TAG, "downloadUrl :" + downloadUrl);
                             try {
                                 account.put("profile_pic", downloadUrl);
+                                handleToken();
                                 new PostClass(SignUpForm.this).execute(account);
                             } catch (org.json.JSONException e) {
                                 e.printStackTrace();
@@ -150,6 +155,7 @@ public class SignUpForm extends AppCompatActivity
                 } else if (flag) {
 
                     account.put("profile_pic", "default");
+                    handleToken();
                     new PostClass(SignUpForm.this).execute(account);
 
                 }
@@ -160,6 +166,18 @@ public class SignUpForm extends AppCompatActivity
         }
 
 
+    }
+
+    private void handleToken() {
+        try {
+            String token = prefs.getString(getString(R.string.refresh_token), "null");
+            if(!token.equals("null")){
+                new PostTokenId(this, storage)
+                        .execute().get();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public String BitMapToString(Bitmap bitmap) {
@@ -183,7 +201,7 @@ public class SignUpForm extends AppCompatActivity
                 bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(selectedImage));
                 editor = prefs.edit();
                 editor.putString("profile_pic", BitMapToString(bitmap));
-                editor.commit();
+                editor.apply();
                 progress.dismiss();
                 imageView.setImageBitmap(bitmap);
             }
@@ -196,7 +214,7 @@ public class SignUpForm extends AppCompatActivity
 
         private Context context;
 
-        public PostClass(Context c) {
+        PostClass(Context c) {
             this.context = c;
         }
 
@@ -259,13 +277,6 @@ public class SignUpForm extends AppCompatActivity
 
                 final JSONObject res = new JSONObject(sb.toString());
 
-                String token = prefs.getString(getString(R.string.refresh_token), "null");
-                if(!token.equals("null")){
-                    Utils util = new Utils();
-                    util.sendTokentoServer(token, res.getString("id"), context);
-
-                }
-
                 runOnUiThread(new Runnable() {
 
                     @Override
@@ -284,7 +295,7 @@ public class SignUpForm extends AppCompatActivity
                                     SharedPreferences.Editor editor = prefs.edit();
                                     editor.putString("uid", res.getString("id"));
                                     editor.putString("first_token", "false");
-                                    editor.commit();
+                                    editor.apply();
 
 
                                     Intent intent = new Intent(SignUpForm.this, InboxActivity.class);
@@ -299,7 +310,7 @@ public class SignUpForm extends AppCompatActivity
 
                         } catch (org.json.JSONException e) {
                             e.printStackTrace();
-                            Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
                             onPostExecute();
                         }
 
@@ -313,7 +324,7 @@ public class SignUpForm extends AppCompatActivity
                     @Override
                     public void run() {
                         onPostExecute();
-                        Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
 

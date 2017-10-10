@@ -6,29 +6,40 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.CheckedTextView;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.TableLayout;
+import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewSwitcher;
 
 import com.amulyakhare.textdrawable.TextDrawable;
 import com.amulyakhare.textdrawable.util.ColorGenerator;
+import com.rohitvyavahare.extensions.Contact.ContactAdapter;
+import com.rohitvyavahare.extensions.Contact.ContactListData;
+import com.rohitvyavahare.webservices.GetContacts;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -40,12 +51,16 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
@@ -53,8 +68,9 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
 
     private static final String TAG = "OrderDetailsActivity";
     private List<ListData> mDataList = new ArrayList<>();
-    private ColorGenerator mColorGenerator = ColorGenerator.MATERIAL;
+    private List<ContactListData> contactDataList = new ArrayList<>();
     private TextDrawable.IBuilder mDrawableBuilder;
+    private ColorGenerator mColorGenerator = ColorGenerator.MATERIAL;
     private SharedPreferences prefs;
     private SharedPreferences.Editor editor;
     private ProgressDialog progress;
@@ -65,9 +81,11 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
     private String orders;
     private HashMap<String, String> possibleStatus = new HashMap<>();
     private HashMap<String, String> outboxStatus = new HashMap<>();
-    private HashMap<String, String> status = new HashMap<>();
+    private HashMap<String, String> markedStatus = new HashMap<>();
     private String type = "inbox";
     private JSONObject d_org;
+    private String auth;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,6 +94,7 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
 
         bundle = getIntent().getExtras();
         prefs = getSharedPreferences(getString(R.string.private_file), MODE_PRIVATE);
+        auth = prefs.getString("uid", "null");
 
         orders = bundle.get("orders").toString();
         type = bundle.getString("type");
@@ -86,17 +105,39 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
         findViewById(R.id.back_btn).setOnClickListener(OrderDetailsActivity.this);
         findViewById(R.id.btn_cancel_order).setOnClickListener(OrderDetailsActivity.this);
         findViewById(R.id.btn_change_status).setOnClickListener(OrderDetailsActivity.this);
+        findViewById(R.id.btn_single_status).setOnClickListener(OrderDetailsActivity.this);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
+//        MobileAds.initialize(getApplicationContext(), getString(R.string.banner_app_id));
+//
+//        AdView mAdView = (AdView) findViewById(R.id.adView);
+//        AdRequest adRequest;
+//        if (BuildConfig.DEBUG) {
+//            String android_id = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
+//            String deviceId = md5(android_id).toUpperCase();
+//            adRequest = new AdRequest.Builder()
+//                    .addTestDevice(deviceId)
+//                    .build();
+//        }
+//        else {
+//            adRequest = new AdRequest.Builder().build();
+//
+//        }
+//        mAdView.loadAd(adRequest);
 
-            }
-        });
-        fab.setVisibility(View.INVISIBLE);
+//        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+//        fab.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//
+//            }
+//        });
+//        fab.setVisibility(View.INVISIBLE);
 
         try {
+
+            for (String key : bundle.keySet()) {
+                Log.d(TAG, key + " = \"" + bundle.get(key) + "\"");
+            }
 
             possibleStatus.put("created", "Mark acknowledged");
             possibleStatus.put("acknowledged", "Mark shipped");
@@ -104,18 +145,38 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
             possibleStatus.put("cancelled", "Cancel Order");
             possibleStatus.put("sender_completed", "Mark order received");
 
+            markedStatus.put("createdBy", "Created by");
+            markedStatus.put("acknowledgedBy", "Acknowledged by");
+            markedStatus.put("shippingBy", "Shipped by");
+            markedStatus.put("sender_completedBy", "Order completed by");
+            markedStatus.put("receiver_completedBy", "Received by");
+            markedStatus.put("cancelledBy", "Cancelled by");
+
+            LinkedList<String> markedStatusList = new LinkedList<>(Arrays.asList(
+                    "createdBy",
+                    "acknowledgedBy",
+                    "shippingBy",
+                    "sender_completedBy",
+                    "receiver_completedBy",
+                    "cancelledBy"
+            ));
 
             outboxStatus.put("created", "Created");
             outboxStatus.put("acknowledged", "Acknowledged by seller");
             outboxStatus.put("shipping", "Order has been shipped");
             outboxStatus.put("sender_completed", "Order delivered by seller");
 
+            LinkedList<CheckedTextView> textViews = new LinkedList<>(Arrays.asList(
+                    (CheckedTextView) findViewById(R.id.ViewCreatedBy),
+                    (CheckedTextView) findViewById(R.id.ViewAcknowledgedBy),
+                    (CheckedTextView) findViewById(R.id.ViewShippedBy),
+                    (CheckedTextView) findViewById(R.id.ViewCompleteddBy),
+                    (CheckedTextView) findViewById(R.id.ViewReceivedBy)
+            ));
 
-            status.put("created", "Created");
-            status.put("acknowledged", "Acknowledged");
-            status.put("shipping", "Shipping");
-            status.put("sender_completed", "Order delivered by seller");
-            status.put("receiver_completed", "Order received by seller");
+            for (CheckedTextView v : textViews) {
+                v.setOnClickListener(OrderDetailsActivity.this);
+            }
 
             if (bundle.get("order_details").toString().equals("null")) {
 
@@ -131,22 +192,18 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
                 ListView listView = (ListView) findViewById(R.id.listView);
 
                 d_org = new JSONObject(prefs.getString("default_org", "null"));
-                if (d_org.has("band") && Integer.parseInt(d_org.getString("band")) < 2) {
+                if (d_org.has("band") && Integer.parseInt(d_org.getString("band")) < 3) {
                     FrameLayout footerLayout = (FrameLayout) getLayoutInflater().inflate(R.layout.fragment_order, null);
                     footerLayout.findViewById(R.id.btn_add_comment).setOnClickListener(OrderDetailsActivity.this);
                     listView.addHeaderView(footerLayout);
-
-//                    listView.addFooterView(footerLayout);
-                }
-                else {
+                } else {
                     Button btn = (Button) findViewById(R.id.btn_cancel_order);
                     btn.setVisibility(View.GONE);
                 }
 
-                if (obj.has("item")) {
+                if (obj.has("order_id")) {
                     textView = (TextView) findViewById(R.id.Item);
-                    String text = obj.getString("item").substring(0, 1).toUpperCase() + obj.getString("item").substring(1);
-                    textView.setText(text);
+                    textView.setText(obj.getString("order_id"));
                 }
                 if (obj.has("created")) {
                     textView = (TextView) findViewById(R.id.Line1);
@@ -171,9 +228,18 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
                     str = str + dfto.format(today);
                     textView.setText(str);
                 }
-                if (obj.has("quantity")) {
-                    textView = (TextView) findViewById(R.id.Qunatity);
-                    textView.setText("Quantity " + obj.getString("quantity"));
+
+                if(obj.has("shipment")) {
+                    handleShipmentTable(obj.getJSONArray("shipment"));
+                }
+                if(obj.has("item") && obj.has("quantity")) {
+                    JSONArray arr = new JSONArray();
+                    JSONObject itemQuantObj = new JSONObject();
+                    itemQuantObj.put("item", obj.getString("item"));
+                    itemQuantObj.put("quantity", obj.getString("quantity"));
+                    arr.put(itemQuantObj);
+                    handleShipmentTable(arr);
+
                 }
 
                 if (obj.has("messages")) {
@@ -206,6 +272,46 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
                     listView.setAdapter(new SampleAdapter());
                 }
 
+                boolean cancel = false, start = true;
+                int i = 0;
+
+                if (obj.getString("status").equals("cancelled")) {
+                    Log.d(TAG, "Cancel is true");
+                    cancel = true;
+                }
+
+                for (String by : markedStatusList) {
+                    Log.d(TAG, "Marking status :" + by);
+                    String st = by.split("By")[0];
+                    if (obj.has(by)) {
+                        Log.d(TAG, "By");
+                        textViews.get(i).setText(markedStatus.get(by) + " " + obj.getString(by));
+                        i++;
+                    } else if (!cancel && start) {
+                        textViews.get(i).setText(markedStatus.get(by));
+                        i++;
+                    } else if (!cancel && !by.equals("cancelledBy") && !start) {
+
+                        Log.d(TAG, "Not cancel");
+
+                        textViews.get(i).setText(markedStatus.get(by));
+                        Drawable img = ContextCompat.getDrawable(this, R.drawable.ic_highlight_off_black_24dp);
+//                        textViews.get(i).setCheckMarkDrawable(img);
+                        textViews.get(i).setCompoundDrawablesWithIntrinsicBounds(img, null, null, null);
+                        i++;
+
+                    }
+                    if (st.equals(obj.getString("status"))) {
+                        start = false;
+                    }
+                }
+
+                while (i < markedStatusList.size() - 1) {
+                    Log.d(TAG, "Marking invisible");
+                    textViews.get(i).setVisibility(View.INVISIBLE);
+                    i++;
+                }
+
                 setStatus(obj, type);
             }
 
@@ -214,67 +320,247 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
         }
     }
 
+    private void handleShipmentTable(JSONArray input) {
+        try {
+
+            TableLayout ll = (TableLayout) findViewById(R.id.ShipmentTable);
+            ll.setColumnShrinkable(2,true);
+            ll.setStretchAllColumns(true);
+            TableRow.LayoutParams tlp = new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.MATCH_PARENT);
+
+            TableRow row= new TableRow(this);
+            row.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+            TextView item = new TextView(this);
+            item.setGravity(Gravity.CENTER);
+            item.setText("Item");
+            item.setTypeface(null, Typeface.BOLD);
+            item.setBackgroundDrawable( getResources().getDrawable(R.drawable.cell_shape) );
+            item.setPadding(5,2,5,2);
+            item.setLayoutParams(tlp);
+
+            TextView quantity = new TextView(this);
+            quantity.setGravity(Gravity.CENTER);
+            quantity.setText("Quantity");
+            quantity.setTypeface(null, Typeface.BOLD);
+            quantity.setBackgroundDrawable( getResources().getDrawable(R.drawable.cell_shape) );
+            quantity.setPadding(5,2,5,2);
+            quantity.setLayoutParams(tlp);
+
+            row.setGravity(Gravity.CENTER);
+            row.addView(item);
+            row.addView(quantity);
+            ll.addView(row, new TableLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT, TableLayout.LayoutParams.MATCH_PARENT));
+
+            for(int i=0; i<input.length(); i++) {
+
+                JSONObject obj = input.getJSONObject(i);
+
+                if(!obj.has("item") && !obj.has("quantity")) {
+                    continue;
+                }
+
+                row= new TableRow(this);
+                row.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+
+                item = new TextView(this);
+                item.setGravity(Gravity.CENTER);
+                item.setText(obj.getString("item"));
+                item.setBackgroundDrawable( getResources().getDrawable(R.drawable.cell_shape) );
+                item.setPadding(5,2,5,2);
+                item.setLayoutParams(tlp);
+
+                quantity = new TextView(this);
+                quantity.setText(obj.getString("quantity"));
+                quantity.setGravity(Gravity.CENTER);
+                quantity.setBackgroundDrawable( getResources().getDrawable(R.drawable.cell_shape) );
+                quantity.setPadding(5,2,5,2);
+                quantity.setLayoutParams(tlp);
+
+                row.setGravity(Gravity.CENTER);
+                row.addView(item);
+                row.addView(quantity);
+                ll.addView(row, new TableLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT, TableLayout.LayoutParams.MATCH_PARENT));
+            }
+
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private void setStatus(JSONObject obj, String type) {
 
         try {
-            TextView article;
-            ViewSwitcher switcher;
-            Button btn;
+            ViewSwitcher switcher = (ViewSwitcher) findViewById(R.id.my_switcher_2);
+            TextView article = (TextView) findViewById(R.id.ViewReceiverCompletedStatus);
+            Button change_status = (Button) findViewById(R.id.btn_change_status);
+            Button cancel = (Button) findViewById(R.id.btn_cancel_order);
+            Button single_status = (Button) findViewById(R.id.btn_single_status);
 
-            Log.d("Status of order :", obj.getString("status"));
+            Log.d(TAG, "Status of order :" + obj.getString("status"));
 
-            if (obj.getString("status").equals("sender_completed")) {
+            HashMap<String, Integer> order_type = new HashMap<String, Integer>() {{
+                put("inbox", 0);
+                put("outbox", 1);
+            }};
 
-                article = (TextView) findViewById(R.id.ViewReceiverCompletedStatus);
+            HashMap<String, Integer> status = new HashMap<String, Integer>() {{
+                put("created", 0);
+                put("acknowledged", 1);
+                put("shipping", 2);
+                put("cancelled", 3);
+                put("sender_completed", 4);
+                put("receiver_completed", 5);
+            }};
 
-                if (type.equals("outbox")) {
-                    switcher = (ViewSwitcher) findViewById(R.id.my_switcher_2);
-                    switcher.showNext();
-                    btn = (Button) findViewById(R.id.btn_change_status);
-                    btn.setText(possibleStatus.get(obj.getString("status")));
-                    article.setText(R.string.sender_completed);
-                } else {
-                    article.setText(R.string.sender_completed);
+            switch (order_type.get(type)) {
+                case 0: {
+
+                    Log.d(TAG, "Type inbox");
+
+                    switch (status.get(obj.getString("status"))) {
+
+                        case 0: {
+                            Log.d(TAG, "Case 0");
+                        }
+                        case 1: {
+
+                            Log.d(TAG, "Case 1");
+                            LinearLayout linearLayout = (LinearLayout) findViewById(R.id.StatusLinearLayout);
+                            linearLayout.setVisibility(View.GONE);
+                            if (d_org.has("band") && Integer.parseInt(d_org.getString("band")) > 2) {
+                                change_status.setVisibility(View.GONE);
+                                cancel.setVisibility(View.GONE);
+                            } else {
+                                change_status.setText(possibleStatus.get(obj.getString("status")));
+                            }
+                            break;
+                        }
+                        case 2: {
+
+                            Log.d(TAG, "Case 2");
+                            cancel.setVisibility(View.GONE);
+                            switcher.showNext();
+                            LinearLayout linearLayout = (LinearLayout) findViewById(R.id.StatusLinearLayout);
+                            linearLayout.setVisibility(View.GONE);
+                            single_status.setText(possibleStatus.get(obj.getString("status")));
+                            single_status.setBackgroundColor(getResources().getColor(R.color.primary_btn));
+                            break;
+                        }
+
+                        case 3: {
+
+                            Log.d(TAG, "Case 3");
+                            article = (TextView) findViewById(R.id.ViewReceiverCompletedStatus);
+                            article.setText(R.string.cancelled);
+                            cancel.setVisibility(View.GONE);
+                            change_status.setVisibility(View.GONE);
+                            switcher.setVisibility(View.GONE);
+
+                            break;
+                        }
+
+                        case 4: {
+
+                            Log.d(TAG, "Case 4");
+                            article.setText(R.string.sender_completed);
+                            change_status.setVisibility(View.GONE);
+                            cancel.setVisibility(View.GONE);
+                            switcher.setVisibility(View.GONE);
+                            break;
+                        }
+                        case 5: {
+
+                            Log.d(TAG, "Case 5");
+                            article = (TextView) findViewById(R.id.ViewReceiverCompletedStatus);
+                            article.setText(R.string.receiver_completed);
+                            change_status.setVisibility(View.GONE);
+                            cancel.setVisibility(View.GONE);
+                            switcher.setVisibility(View.GONE);
+                            break;
+                        }
+
+                        default: {
+
+                            Log.d(TAG, "Default Case");
+                            break;
+                        }
+                    }
+
+
+                    break;
                 }
+                case 1: {
 
-            } else if (obj.getString("status").equals("receiver_completed")) {
+                    switch (status.get(obj.getString("status"))) {
 
-                article = (TextView) findViewById(R.id.ViewReceiverCompletedStatus);
-                article.setText(R.string.receiver_completed);
+                        case 0: {
+                            Log.d(TAG, "Case 0");
+                        }
+                        case 1: {
+                            Log.d(TAG, "Case 1");
+                        }
+                        case 2: {
 
-            } else if (obj.getString("status").equals("cancelled")) {
+                            Log.d(TAG, "Case 2");
+                            article = (TextView) findViewById(R.id.ViewReceiverCompletedStatus);
+                            article.setText(outboxStatus.get(obj.getString("status")));
+                            change_status.setVisibility(View.GONE);
+                            switcher.showNext();
+                            single_status.setText(getString(R.string.cancel_order));
+                            single_status.setBackgroundColor(getResources().getColor(R.color.danger));
 
-                article = (TextView) findViewById(R.id.ViewReceiverCompletedStatus);
-                article.setText(R.string.cancelled);
-                btn = (Button) findViewById(R.id.btn_cancel_order);
-                btn.setVisibility(View.GONE);
+                            break;
+                        }
 
-            } else {
+                        case 3: {
 
-                if (type.equals("outbox")) {
+                            Log.d(TAG, "Case 3");
+                            article = (TextView) findViewById(R.id.ViewReceiverCompletedStatus);
+                            article.setText(R.string.cancelled);
+                            cancel.setVisibility(View.GONE);
+                            change_status.setVisibility(View.GONE);
 
-                    article = (TextView) findViewById(R.id.ViewReceiverCompletedStatus);
-                    article.setText(outboxStatus.get(obj.getString("status")));
+                            break;
+                        }
 
-                } else {
+                        case 4: {
 
-                    switcher = (ViewSwitcher) findViewById(R.id.my_switcher_2);
-                    switcher.showNext();
-                    btn = (Button) findViewById(R.id.btn_change_status);
-                    if((obj.getString("status").equals("created") || obj.getString("status").equals("acknowledged")) && d_org.has("band") && Integer.parseInt(d_org.getString("band")) > 2){
-                        btn.setVisibility(View.GONE);
+                            Log.d(TAG, "Case 4");
+                            switcher.showNext();
+                            single_status.setText(possibleStatus.get(obj.getString("status")));
+                            single_status.setBackgroundColor(getResources().getColor(R.color.primary_btn));
+
+                            break;
+                        }
+
+                        case 5: {
+
+                            Log.d(TAG, "Case 5");
+                            article = (TextView) findViewById(R.id.ViewReceiverCompletedStatus);
+                            article.setText(R.string.receiver_completed);
+                            change_status.setVisibility(View.GONE);
+                            cancel.setVisibility(View.GONE);
+                            break;
+                        }
+
+                        default: {
+
+                            Log.d(TAG, "Default Case");
+                            break;
+                        }
+
                     }
-                    else {
-                        btn.setText(possibleStatus.get(obj.getString("status")));
-                    }
 
+                    break;
+                }
+                default: {
+
+                    Log.d(TAG, "Type Default Case");
+                    break;
                 }
             }
-            if(obj.getString("status").equals("shipping") || obj.getString("status").equals("sender_completed") || obj.getString("status").equals("receiver_completed")){
-                btn = (Button) findViewById(R.id.btn_cancel_order);
-                btn.setVisibility(View.GONE);
-            }
-
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -287,21 +573,159 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
 
         int i = v.getId();
         Log.d(TAG, "something clicked");
+
+        if (i == R.id.ViewCreatedBy || i == R.id.ViewAcknowledgedBy || i == R.id.ViewCompleteddBy || i == R.id.ViewReceivedBy
+                || i == R.id.ViewReceiverCompletedStatus || i == R.id.ViewShippedBy) {
+            handleStatusClick(i);
+        } else {
+            handleBtnClick(i);
+        }
+
+    }
+
+    private void handleStatusClick(int i) {
+
+        try {
+
+            Log.d(TAG, "request button clicked");
+            JSONObject body = new JSONObject();
+            JSONArray orgArr = new JSONArray();
+
+            String default_org_tag = d_org.getString("tag");
+
+            Log.d(TAG, "default orf id :" + default_org_tag);
+            String paired_orgs = prefs.getString(default_org_tag + getString(R.string.paired_orgs), "[{type : null}]");
+            Log.d(TAG, "Paired orgs :" + paired_orgs);
+
+            JSONArray arr = new JSONArray(paired_orgs);
+            Log.d(TAG, "Paired orgs :" + arr.toString());
+
+            JSONObject current_org = null;
+
+            for (int k = 0; k < arr.length(); k++) {
+                JSONObject obj = arr.getJSONObject(k);
+                if (obj.has("tag") && obj.getString("tag").equals(bundle.getString("org_tag"))) {
+                    current_org = obj;
+                    break;
+                }
+            }
+
+            for (int j = 1; j < 4; j++) {
+                JSONObject org = new JSONObject();
+                if (current_org.has("name") && current_org.has("id")) {
+                    org.put("id", current_org.getString("id"));
+                    org.put("name", current_org.getString("name"));
+                    org.put("band", j);
+                    orgArr.put(org);
+                }
+            }
+            body.put("keys", orgArr);
+            String[] name = ((CheckedTextView) findViewById(i)).getText().toString().split(" by ");
+            if (name.length > 1) {
+                body.put("name", name[1]);
+                Bundle input = new Bundle();
+                input.putString("uid", auth);
+                input.putString("body", body.toString());
+
+                Bundle output = new GetContacts(this).execute(input).get();
+                output.putString("input", body.toString());
+                handleGetContacts(output);
+            }
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        }
+
+    }
+
+    private void handleGetContacts(Bundle input) {
+        try {
+            if(!input.getString("exception").equals("no_exception")) {
+                showMessageOnUi(input.getString("exception"));
+                return;
+            }
+            int response = input.getInt("response");
+            String outputBody = input.getString("output");
+            JSONObject body = new JSONObject(input.getString("input"));
+            switch (response) {
+                case 200: {
+
+                    JSONArray arr = new JSONArray(outputBody);
+                    List<ListData> mDataList = new ArrayList<>();
+                    for (int i = 0; i < arr.length(); i++) {
+                        JSONObject obj = arr.getJSONObject(i);
+                        Log.d(TAG, "Matching Name :" + body.getString("name"));
+                        Log.d(TAG, "Contact :" + obj.toString());
+                        if (obj.has("name") && obj.has("phone_number") && obj.has(("profile_pic"))
+                                && obj.getString("name").toLowerCase().equals(body.getString("name").toLowerCase())) {
+                            Log.d(TAG, "Object :" + obj.toString());
+                            contactDataList.add(new ContactListData(obj.getString("name"), obj.getString("phone_number"), obj.getString("profile_pic")));
+                        }
+
+                    }
+                    if (contactDataList.size() > 0) {
+                        Log.d(TAG, "Size :" + mDataList.size());
+                        AlertDialog.Builder dialog = new AlertDialog.Builder(OrderDetailsActivity.this);
+                        dialog.setTitle("Contacts");
+                        LayoutInflater li = (LayoutInflater) OrderDetailsActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                        View v = li.inflate(R.layout.dialog_listview, null, false);
+                        ListView listView = (ListView) v.findViewById(R.id.listView);
+                        listView.setAdapter(new ContactAdapter(OrderDetailsActivity.this, contactDataList));
+                        dialog.setView(v);
+                        dialog.show();
+                    } else {
+                        showMessageOnUi("No contacts found");
+                    }
+                    break;
+                }
+                default: {
+                    showMessageOnUi("Something went wrong while retrieving contact, Please try again");
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            showMessageOnUi("Something went wrong while retrieving contact, Please try again");
+        }
+    }
+
+    private void showMessageOnUi(final String message) {
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+                Toast.makeText(OrderDetailsActivity.this, message, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+    }
+
+    private void handleBtnClick(int i) {
+
+        boolean single_btn_clicked = false;
+        Button single_btn = (Button) findViewById(R.id.btn_single_status);
+        String single_text = "";
+        if (!single_btn.getText().toString().trim().equals("")) {
+            single_btn_clicked = true;
+            single_text = single_btn.getText().toString().trim().toLowerCase();
+        }
         if (i == R.id.back_btn) {
 
             Log.d(TAG, "back btn clicked");
 
-            Intent intent = new Intent(OrderDetailsActivity.this, OrdersActivity.class);
+            Intent intent = new Intent(OrderDetailsActivity.this, OrdersActivityV2.class);
             Bundle bundle = new Bundle();
 
             Log.d(TAG, "Orders :" + orders);
             bundle.putString("orders", orders);
             bundle.putString("type", getIntent().getExtras().get("type").toString());
             bundle.putString("org_name", getIntent().getExtras().get("org_name").toString());
+            bundle.putString("org_tag", getIntent().getExtras().get("org_tag").toString());
             intent.putExtras(bundle);
             startActivity(intent);
 
-        } else if (i == R.id.btn_cancel_order) {
+        } else if (i == R.id.btn_cancel_order || (i == R.id.btn_single_status && single_btn_clicked && single_text.equals("cancel order"))) {
 
             Log.d(TAG, "Cancel order btn clicked");
 
@@ -317,7 +741,7 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
                 Toast.makeText(OrderDetailsActivity.this, "Something went wrong while retrieving Order Details, Please try again", Toast.LENGTH_SHORT).show();
             }
 
-        } else if (i == R.id.btn_change_status) {
+        } else if (i == R.id.btn_change_status || (i == R.id.btn_single_status && single_btn_clicked)) {
             Log.d(TAG, "Change status btn clicked");
             Bundle bundle = new Bundle();
             bundle.putString("obj", getIntent().getExtras().get("order_details").toString());
@@ -390,6 +814,30 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
             builder.show();
 
         }
+    }
+
+    private String md5(final String s) {
+        try {
+            // Create MD5 Hash
+            MessageDigest digest = java.security.MessageDigest
+                    .getInstance("MD5");
+            digest.update(s.getBytes());
+            byte messageDigest[] = digest.digest();
+
+            // Create Hex String
+            StringBuffer hexString = new StringBuffer();
+            for (int i = 0; i < messageDigest.length; i++) {
+                String h = Integer.toHexString(0xFF & messageDigest[i]);
+                while (h.length() < 2)
+                    h = "0" + h;
+                hexString.append(h);
+            }
+            return hexString.toString();
+
+        } catch (NoSuchAlgorithmException e) {
+            Log.e(TAG, e.toString());
+        }
+        return "";
     }
 
     @Override
@@ -484,6 +932,17 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
         }
     }
 
+    private void handleEditOrder() {
+        try{
+
+            // @TODO call place order
+            // @TODO check is it customer or owner
+
+        } catch (Exception e) {
+
+        }
+    }
+
     @Override
     public void onBackPressed() {
 
@@ -542,38 +1001,36 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
                 connection.setRequestProperty("Authorization", auth);
                 connection.setDoOutput(true);
 
-                Log.d(TAG, "default org for order :"+ d_org.toString());
+                Log.d(TAG, "default org for order :" + d_org.toString());
 
-                String paired_orgs = prefs.getString(d_org.getString("name") + R.string.paired_orgs, "null");
+                String paired_orgs = prefs.getString(d_org.getString("tag") + getString(R.string.paired_orgs), "null");
                 JSONObject to_org = new JSONObject();
 
                 Log.d(TAG, "Put request for type " + type);
-
                 Log.d(TAG, "paired_arr :" + paired_orgs);
 
                 JSONArray paired_arr = new JSONArray(paired_orgs);
 
-                Log.d(TAG, "org_name :"  + getIntent().getExtras().get("org_name").toString());
+                Log.d(TAG, "org_name :" + getIntent().getExtras().get("org_name").toString());
 
-                for(int i=0; i<paired_arr.length(); i++){
-                    if(paired_arr.getJSONObject(i).has("name") && paired_arr.getJSONObject(i).getString("name").equals(getIntent().getExtras().get("org_name").toString())){
+                for (int i = 0; i < paired_arr.length(); i++) {
+                    if (paired_arr.getJSONObject(i).has("name") && paired_arr.getJSONObject(i).getString("name").equals(getIntent().getExtras().get("org_name").toString())) {
                         to_org = paired_arr.getJSONObject(i);
                     }
                 }
 
-                if(!to_org.has("id")){
+                if (!to_org.has("id")) {
                     throw new NullPointerException("to_org can't be null");
                 }
 
                 JSONObject body = new JSONObject();
                 body.put("order", b);
 
-                if(type.equals("inbox")){
+                if (type.equals("inbox")) {
                     body.put("to", d_org);
                     body.put("from", to_org);
                     Log.d(TAG, "from org as type is inbox:" + to_org.toString());
-                }
-                else {
+                } else {
                     body.put("to", to_org);
                     body.put("from", d_org);
                     Log.d(TAG, "to org as type is outbox:" + to_org.toString());
@@ -627,7 +1084,8 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
                                         }
                                     }
                                     editor = prefs.edit();
-                                    JSONArray arr = new JSONArray(prefs.getString(getIntent().getExtras().get("org_name").toString(), "null"));
+//                                    JSONArray arr = new JSONArray(prefs.getString(getIntent().getExtras().get("org_name").toString(), "null"));
+                                    JSONArray arr = new JSONArray(prefs.getString(getIntent().getExtras().get("org_tag").toString(), "null"));
 
                                     int position = Integer.parseInt(getIntent().getExtras().get("position").toString());
                                     JSONArray newArr = new JSONArray();
@@ -645,7 +1103,8 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
 
                                     Log.d(TAG, "orders after response from server: " + orders);
 
-                                    editor.putString(getIntent().getExtras().get("org_name").toString(), newArr.toString());
+//                                    editor.putString(getIntent().getExtras().get("org_name").toString(), newArr.toString());
+                                    editor.putString(getIntent().getExtras().get("org_tag").toString(), newArr.toString());
                                     editor.commit();
                                     Intent intent = new Intent(OrderDetailsActivity.this, OrderDetailsActivity.class);
                                     Bundle b = new Bundle();
@@ -653,6 +1112,7 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
                                     b.putString("orders", getIntent().getExtras().get("orders").toString());
                                     b.putString("type", getIntent().getExtras().get("type").toString());
                                     b.putString("org_name", getIntent().getExtras().get("org_name").toString());
+                                    b.putString("org_tag", getIntent().getExtras().get("org_tag").toString());
                                     b.putString("position", Integer.toString(position));
                                     onPutExecute();
                                     intent.putExtras(b);
@@ -667,7 +1127,7 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
                                 break;
                             }
                             case 400: {
-                                Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(context, "Opss Something went wrong please try again later, Status code :400", Toast.LENGTH_SHORT).show();
                                 onPutExecute();
                                 break;
 
@@ -689,7 +1149,7 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
                     @Override
                     public void run() {
                         onPutExecute();
-                        Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
             }

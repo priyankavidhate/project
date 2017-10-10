@@ -1,14 +1,10 @@
 package com.example.rohitvyavahare.project;
 
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.graphics.Typeface;
-import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -16,107 +12,167 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.SpannableStringBuilder;
 import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.BaseAdapter;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.amulyakhare.textdrawable.TextDrawable;
-import com.amulyakhare.textdrawable.util.ColorGenerator;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.MobileAds;
 import com.mikhaellopez.circularimageview.CircularImageView;
+import com.rohitvyavahare.Data.Storage;
+import com.rohitvyavahare.extensions.Inbox.Adapter;
+import com.rohitvyavahare.extensions.Inbox.ListData;
+import com.rohitvyavahare.webservices.GetInbox;
+import com.rohitvyavahare.webservices.GetOrgs;
+import com.rohitvyavahare.webservices.GetOutbox;
+import com.rohitvyavahare.webservices.GetPairedOrgs;
+import com.rohitvyavahare.webservices.PostTokenId;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static com.example.rohitvyavahare.project.InboxActivity.bitmap;
 
 public class OutboxActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener{
+        implements NavigationView.OnNavigationItemSelectedListener {
 
-    // declare the color generator and drawable builder
-    private ColorGenerator mColorGenerator = ColorGenerator.MATERIAL;
-    private TextDrawable.IBuilder mDrawableBuilder;
-    private ProgressDialog progress;
     private static final String TAG = "OutboxActivity";
 
     // list of data items
-    private List<ListData> mDataList = new ArrayList<>();
-    private SharedPreferences prefs;
-    SharedPreferences.Editor editor;
-    Utils util = new Utils();
+
+    private List<ListData> outboxDataList = new ArrayList<>();
+    ListView listView;
+    TextView empty;
+    Utils util;
+    Storage storage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_inbox);
 
-        Toolbar toolbar;
-        toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        util = new Utils();
+        storage = new Storage(this);
 
-        RelativeLayout rl = (RelativeLayout) findViewById(R.id.rl1);
-        LayoutInflater layoutInflater = (LayoutInflater)
-                this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View layout = layoutInflater.inflate(R.layout.content_side_bar, null, true);
-        rl.addView(layout);
-        prefs = getSharedPreferences(getString(R.string.private_file), MODE_PRIVATE);
-        editor = prefs.edit();
+        enableToolBar();
+        enableLayout();
+        enableAdView();
+        enableNavigationView();
+        enableFloatingActionButton();
+        setupRefreshToken();
+        setupDbPull();
+    }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.setDrawerListener(toggle);
-        toggle.syncState();
+    private void setupRefreshToken() {
+        try {
+            FirebaseToken token = new FirebaseToken();
+            String storedToken = storage.getRefreshToken();
+            if(token.verifyToken(storedToken) && storage.getFirstToken().equals("false")) {
+                Log.d(TAG, "Token present, no need to update");
+                return;
+            }
+            storage.setRefreshToken(token.getToken());
+            Log.d(TAG, "Got new token");
 
+            new PostTokenId(this, storage)
+                    .execute().get();
+        } catch (Exception e) {
+            showMessageOnUi(e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private Bundle preWork() {
+        Bundle output = new Bundle();
+        try {
+            output = new GetOrgs(this, storage).execute().get();
+            if (!output.getString("exception").equals("no_exception")) {
+                return output;
+            }
+
+            output = new GetInbox(this, storage)
+                    .execute().get();
+
+            if (!output.getString("exception").equals("no_exception")) {
+                return output;
+            }
+
+            output = new GetPairedOrgs(this, storage)
+                    .execute().get();
+
+            if (!output.getString("exception").equals("no_exception")) {
+                return output;
+            }
+
+        } catch (Exception e) {
+            output.putString("exception", e.getMessage());
+            return output;
+
+        }
+        return output;
+    }
+
+    private void setupDbPull() {
+
+        String hardReload = storage.getHardResetOutbox();
+        if (hardReload.equals("null") || hardReload.equals("true")) {
+            Log.d(TAG, "Hard Reload :" + hardReload);
+            handleGetOutbox();
+        }
+        else {
+            action();
+        }
+    }
+
+    private void enableNavigationView() {
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
         View hView = navigationView.getHeaderView(0);
         TextView nav_user = (TextView) hView.findViewById(R.id.NavName);
-        String username = prefs.getString("user_name", "null");
+        String username = storage.getUserName();
 
         if (!username.equals("null")) {
             nav_user.setText(util.capitalizeString(username));
         }
 
-
         CircularImageView usr_pic = (CircularImageView) hView.findViewById(R.id.ProfilePic);
-        String profile_pic = prefs.getString("profile_pic", "null");
+        String profile_pic = storage.getProfilePic();
         if (!profile_pic.equals("null")) {
-
             if (bitmap != null) {
                 usr_pic.setImageBitmap(bitmap);
-            }
-            else {
+            } else {
                 bitmap = util.StringToBitMap(profile_pic);
                 if (bitmap != null) {
                     usr_pic.setImageBitmap(bitmap);
                 }
             }
         }
+    }
 
+    private void enableLayout() {
+        RelativeLayout rl = (RelativeLayout) findViewById(R.id.rl1);
+        LayoutInflater layoutInflater = (LayoutInflater)
+                this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        View layout = layoutInflater.inflate(R.layout.content_side_bar, null, true);
+        rl.addView(layout);
+    }
 
+    private void enableFloatingActionButton() {
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -125,205 +181,224 @@ public class OutboxActivity extends AppCompatActivity
                 startActivity(intent);
             }
         });
+    }
 
-        mDrawableBuilder = TextDrawable.builder()
-                .round();
+    private void enableToolBar() {
+        Toolbar toolbar;
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.setDrawerListener(toggle);
+        toggle.syncState();
+    }
 
-        ListView listView = (ListView) findViewById(R.id.listView);
-        final TextView empty = (TextView) findViewById(R.id.empty);
-        final TextView currentOrgName = (TextView) findViewById(R.id.currentOrg);
+    private void enableAdView() {
+        MobileAds.initialize(getApplicationContext(), getString(R.string.banner_app_id));
 
-        String refreshToken = prefs.getString(getString(R.string.refresh_token), "null");
-
-        if(refreshToken.equals("null")){
-            editor.putString(getString(R.string.hard_reload_outbox), "true");
-            editor.commit();
-        }
-
-        String hard_reload = prefs.getString(getString(R.string.hard_reload_outbox), "null");
-        if(hard_reload.equals("null") || hard_reload.equals("true")){
-            Log.d(TAG, "Hard Reload :" + hard_reload);
-            new GetClass(this).execute(getIntent().getExtras());
-
-        }
-
-        String default_org = prefs.getString("default_org", "null");
-
-        if (!default_org.equals("null")) {
-            try {
-                JSONObject org = new JSONObject(prefs.getString("default_org", "{type : null}"));
-                String string = prefs.getString(org.getString("id") + R.string.outbox, "null");
-                Log.d(TAG, "default org found: " + org);
-
-                Log.d(TAG, "default org data found: " + string);
-
-                if(org.has("name")){
-                    Log.d(TAG, "HEre");
-                    StyleSpan boldStyle = new StyleSpan(Typeface.BOLD);
-                    Utils util = new Utils();
-                    util.setTextWithSpan(currentOrgName, "Current organization: " + org.getString("name"), org.getString("name"), boldStyle);
-                }
-
-                if (!string.equals("null")) {
-
-                    String[] outbox = string.split(",");
-
-                    Set<String> hs = new HashSet<>();
-
-                    for(String data : outbox){
-                        hs.add(data);
-                    }
-
-                    for(String str : hs){
-                        mDataList.add(new ListData(str));
-                    }
-
-                    // init the list view and its adapter
-
-                    if (outbox.length > 0) {
-                        listView.setAdapter(new SampleAdapter());
-                        empty.setVisibility(View.INVISIBLE);
-
-                    } else {
-
-                        empty.setText(getString(R.string.no_outbox_order_msg));
-                        listView.setEmptyView(empty);
-                    }
-
-
-                }
-                else if(org.has("type") && org.getString("type").equals("null")){
-                    empty.setText(getString(R.string.no_org_msg));
-                }
-                else {
-                    Log.d(TAG, "Empty Outbox");
-                    empty.setText(getString(R.string.no_outbox_order_msg));
-                    //new GetClass(this).execute(getIntent().getExtras());
-
-                }
-            } catch (org.json.JSONException e) {
-                e.printStackTrace();
-                Toast.makeText(this.getApplicationContext(), "Something went wrong while retrieving Outbox, Please try again", Toast.LENGTH_SHORT).show();
-            }
+        AdView mAdView = (AdView) findViewById(R.id.adView);
+        AdRequest adRequest;
+        if (BuildConfig.DEBUG) {
+            String android_id = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID);
+            String deviceId = md5(android_id).toUpperCase();
+            adRequest = new AdRequest.Builder()
+                    .addTestDevice(deviceId)
+                    .build();
         } else {
-            Log.d(TAG, "No default org");
-            empty.setText(getString(R.string.empty_msg_no_default_org_pair_org));
+            adRequest = new AdRequest.Builder().build();
+
+        }
+        mAdView.loadAd(adRequest);
+    }
+
+    private String md5(final String s) {
+        try {
+            // Create MD5 Hash
+            MessageDigest digest = java.security.MessageDigest
+                    .getInstance("MD5");
+            digest.update(s.getBytes());
+            byte messageDigest[] = digest.digest();
+
+            // Create Hex String
+            StringBuffer hexString = new StringBuffer();
+            for (int i = 0; i < messageDigest.length; i++) {
+                String h = Integer.toHexString(0xFF & messageDigest[i]);
+                while (h.length() < 2)
+                    h = "0" + h;
+                hexString.append(h);
+            }
+            return hexString.toString();
+
+        } catch (NoSuchAlgorithmException e) {
+            Log.e(TAG, e.toString());
+        }
+        return "";
+    }
+
+    private void handleGetOutbox() {
+        try {
+
+            Bundle output;
+            if(storage.getDefaultOrg() == null) {
+                output = preWork();
+                if (!output.getString("exception").equals("no_exception")) {
+                    showMessageOnUi(output.getString("exception"));
+                    return;
+                }
+            }
+            Log.d(TAG, "Going to make get outbox call");
+            output = new GetOutbox(this, storage)
+                    .execute().get();
+
+            if (!output.getString("exception").equals("no_exception")) {
+                showMessageOnUi(output.getString("exception"));
+                return;
+            }
+
+            if (output.getBoolean("empty_view")) {
+                empty.setText(getString(R.string.no_outbox_order_msg));
+                listView.setEmptyView(empty);
+                return;
+            }
+
+            Intent intent = getIntent();
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            finish();
+            startActivity(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
+            showMessageOnUi(e.getMessage());
+        }
+    }
+
+    private void action() {
+        try {
+
+            listView = (ListView) findViewById(R.id.listView);
+            empty = (TextView) findViewById(R.id.empty);
+            final TextView currentOrgName = (TextView) findViewById(R.id.currentOrg);
+
+            String hardReload = storage.getHardResetOutbox();
+
+            if(hardReload.equals("null") || hardReload.equals("true")) {
+                Log.d(TAG, "hardReload true, going to make GET request");
+                handleGetOutbox();
+                return;
+            }
+
+            // check any associated org is present
+            if (storage.getAssociatedOrgs() == null || storage.getAssociatedOrgs().length() == 0) {
+                empty.setText(getString(R.string.no_org_msg));
+                listView.setEmptyView(empty);
+                return;
+            }
+
+
+            if (storage.getDefaultOrg() == null || !storage.getDefaultOrg().has("tag")) {
+                Log.d(TAG, "No default org");
+                empty.setText(getString(R.string.empty_msg_no_default_org_pair_org));
+                return;
+            }
+
+            JSONObject defaultOrg = storage.getDefaultOrg();
+            JSONArray pairedOrgs = storage.getPairedOrgs(defaultOrg.getString("tag"));
+
+            if (pairedOrgs == null || pairedOrgs.length() == 0) {
+                empty.setText(getString(R.string.no_paired_orgs));
+                listView.setEmptyView(empty);
+                return;
+            }
+
+            Log.d(TAG, "default org found: " + defaultOrg.getString("name"));
+            Log.d(TAG, "Paired orgs :" + pairedOrgs.length());
+
+            if (defaultOrg.has("name")) {
+                StyleSpan boldStyle = new StyleSpan(Typeface.BOLD);
+                String text = "Current organization: " + defaultOrg.getString("name");
+                SpannableStringBuilder sb = util.setTextWithSpan(text, defaultOrg.getString("name"), boldStyle);
+                currentOrgName.setText(sb);
+            }
+
+            int no = 0;
+
+            for (int i = 0; i < pairedOrgs.length(); i++) {
+
+                JSONObject pairedOrg = pairedOrgs.getJSONObject(i);
+                Log.d(TAG, "Paired org in consideration :" + pairedOrg.getString("name"));
+
+                if (!pairedOrg.has("name") || !pairedOrg.has("id") || !pairedOrg.has("tag")) {
+                    continue;
+                }
+
+                Log.d(TAG, "Number Of notification for org :"+ pairedOrg.getString("id") + "outbox");
+                no = storage.getNumberOfNotifications(pairedOrg.getString("tag") + "outbox");
+                JSONArray ordersToPairedOrg = storage.getOrdersTo(pairedOrg.getString("tag"));
+
+                if(ordersToPairedOrg == null || ordersToPairedOrg.length() == 0) {
+                    Log.d(TAG, "No Orders from :" + pairedOrg.getString("tag"));
+                    continue;
+                }
+
+                Log.d(TAG, "orders :" + ordersToPairedOrg.toString());
+                int count = util.countInPorgressOrders(ordersToPairedOrg);
+                outboxDataList.add(new ListData(pairedOrg.getString("name"), pairedOrg.getString("tag"),
+                        pairedOrg.getString("org_pic"), count, no));
+            }
+
+            listView.setAdapter(new Adapter(OutboxActivity.this, outboxDataList));
+            empty.setVisibility(View.INVISIBLE);
+
+            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view,
+                                        int position, long id) {
+                    try {
+
+                        ListData data = outboxDataList.get(position);
+                        String orders = storage.getOrdersTo(data.getTag()).toString();
+
+                        Bundle orderData = new Bundle();
+                        orderData.putString("orders", orders);
+                        orderData.putString("org_name", data.getData());
+                        orderData.putString("org_tag", data.getTag());
+                        orderData.putString("type", "outbox");
+
+                        Intent intent = new Intent(OutboxActivity.this, OrdersActivityV2.class);
+                        Log.d(TAG, "Setting 0 Number Of notification for org :"+ data.getData() + "outbox");
+                        storage.setNumberOfNotifications(data.getData() + "outbox", 0);
+
+                        intent.putExtras(orderData);
+                        Log.d(TAG, "Clicked at position :" + position);
+                        Log.d(TAG, "Data :" + data.getData());
+                        Log.d(TAG, "Tag :" + data.getTag());
+                        for (String key : orderData.keySet()) {
+                            Log.d(TAG, key + " is a key in the bundle");
+                        }
+                        startActivity(intent);
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        showMessageOnUi(e.getMessage());
+                    }
+                }
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showMessageOnUi(e.getMessage());
         }
 
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+    }
+
+    private void showMessageOnUi(final String message) {
+        runOnUiThread(new Runnable() {
+
             @Override
-            public void onItemClick(AdapterView<?> parent, View view,
-                                    int position, long id) {
-
-                ListData data = mDataList.get(position);
-
-                String orders = prefs.getString(data.getData() + R.string.outbox, "null");
-
-                Log.d(TAG, "Clicked at position :" + position);
-                Bundle orderData = new Bundle();
-                Log.d(TAG, "Data :" + data.getData());
-                orderData.putString("orders", orders);
-                orderData.putString("org_name", data.getData());
-                orderData.putString("type", "outbox");
-                Intent intent = new Intent(OutboxActivity.this, OrdersActivity.class);
-                for (String key : orderData.keySet()) {
-                    Log.d(TAG, key + " is a key in the bundle");
-                }
-                intent.putExtras(orderData);
-                startActivity(intent);
+            public void run() {
+                Toast.makeText(OutboxActivity.this, message, Toast.LENGTH_SHORT).show();
             }
         });
-
-
-    }
-
-    private class SampleAdapter extends BaseAdapter {
-
-        @Override
-        public int getCount() {
-            return mDataList.size();
-        }
-
-        @Override
-        public ListData getItem(int position) {
-            return mDataList.get(position);
-        }
-
-        @Override
-        public long getItemId(int position) {
-            return position;
-        }
-
-        @Override
-        public View getView(final int position, View convertView, ViewGroup parent) {
-            final ViewHolder holder;
-            if (convertView == null) {
-                convertView = View.inflate(OutboxActivity.this, R.layout.list_item_layout, null);
-                holder = new ViewHolder(convertView);
-                convertView.setTag(holder);
-            } else {
-                holder = (ViewHolder) convertView.getTag();
-            }
-
-            ListData item = getItem(position);
-
-            // provide support for selected state
-            updateCheckedState(holder, item);
-            holder.textView.setText(item.data);
-
-            return convertView;
-        }
-
-        private void updateCheckedState(ViewHolder holder, ListData item) {
-
-            Log.d(TAG, "setting image view");
-            TextDrawable drawable = mDrawableBuilder.build(String.valueOf(item.data.charAt(0)), mColorGenerator.getColor(item.data));
-
-            Log.d(TAG, "item.data " + item.data);
-
-            String pic = prefs.getString(item.data + "_pic", "null");
-            if (!pic.equals("null") && !pic.equals("default")) {
-                holder.imageView.setImageBitmap(util.getBitmapFromURL(pic));
-            } else {
-                Log.d(TAG, "no org_pic");
-                holder.imageView.setImageDrawable(drawable);
-            }
-
-
-            holder.view.setBackgroundColor(Color.TRANSPARENT);
-            holder.checkIcon.setVisibility(View.GONE);
-        }
-    }
-
-    private static class ViewHolder {
-
-        private View view;
-
-        private ImageView imageView;
-
-        private TextView textView;
-
-        private ImageView checkIcon;
-
-        private ViewHolder(View view) {
-            this.view = view;
-            imageView = (ImageView) view.findViewById(R.id.imageView);
-            textView = (TextView) view.findViewById(R.id.textView);
-            checkIcon = (ImageView) view.findViewById(R.id.check_icon);
-        }
-    }
-
-    private static class ListData {
-
-        private String data;
-
-        ListData(String data) {
-            this.data = data;
-        }
-
-        public String getData() {
-            return data;
-        }
 
     }
 
@@ -360,244 +435,48 @@ public class OutboxActivity extends AppCompatActivity
         Intent intent;
 
         switch (item.getItemId()) {
-
             case R.id.nav_inbox: {
                 intent = new Intent(OutboxActivity.this, InboxActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
                 break;
-
             }
 
             case R.id.nav_outbox: {
-
                 intent = new Intent(OutboxActivity.this, OutboxActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
                 break;
-
             }
 
             case R.id.nav_add_employee: {
-
                 intent = new Intent(OutboxActivity.this, AddEmployeeActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
                 break;
-
             }
-
             case R.id.nav_pair_prg: {
-
                 intent = new Intent(OutboxActivity.this, PairOrgActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
                 break;
-
             }
-
             case R.id.nav_add_org: {
-
                 intent = new Intent(OutboxActivity.this, CreateOrgActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
                 break;
-
             }
-
             case R.id.nav_settings: {
-
                 intent = new Intent(OutboxActivity.this, SettingActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
                 break;
-
             }
-
-
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
-
-    private class GetClass extends AsyncTask<Bundle, Void, Void> {
-
-        private final Context context;
-
-        public GetClass(Context c) {
-            context = c;
-        }
-
-        protected void onPreExecute() {
-            progress = new ProgressDialog(this.context);
-            progress.setMessage("Loading");
-            progress.show();
-        }
-
-        @Override
-        protected Void doInBackground(Bundle... params) {
-            try {
-
-                Log.d(TAG, "In background job");
-
-                final JSONObject obj = new JSONObject(prefs.getString("default_org", "null"));
-
-                Log.d(TAG, "default org: " + obj.getString("id"));
-
-
-                Uri uri = new Uri.Builder()
-                        .scheme("http")
-                        .encodedAuthority(getString(R.string.server_ur_templ))
-                        .path(getString(R.string.org))
-                        .appendPath(obj.getString("id"))
-                        .appendPath(getString(R.string.outbox))
-                        .build();
-                //@TODO add band as query parameter
-
-                URL url = new URL(uri.toString());
-                Log.d(TAG, "url:" + url.toString());
-
-                prefs = getSharedPreferences(getString(R.string.private_file), MODE_PRIVATE);
-                String auth = prefs.getString("uid", "null");
-
-                Log.d(TAG, "auth " + auth);
-                if (auth.equals("null")) {
-                    onPostExecute();
-                    //@TODO add alert
-                }
-
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setRequestMethod("GET");
-                connection.setRequestProperty("Content-Type", "application/json");
-                connection.setRequestProperty("Accept", "application/json");
-                connection.setRequestProperty("Authorization", auth);
-
-                final int responseCode = connection.getResponseCode();
-
-                Log.d(TAG, "Sending 'GET' request to URL : :" + url);
-                Log.d(TAG, "Get parameters : " + prefs.getString("default_org", "null"));
-                Log.d(TAG, "Response Code : " + responseCode);
-
-                final StringBuilder sb = new StringBuilder();
-                String line;
-                BufferedReader br;
-
-                try {
-                    br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                } catch (IOException ioe) {
-                    br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
-                }
-
-                while ((line = br.readLine()) != null) {
-                    sb.append(line + "\n");
-                }
-                br.close();
-
-                Log.d(TAG, "Response from GET :" + sb.toString());
-                final ListView listView = (ListView) findViewById(R.id.listView);
-                final TextView empty = (TextView) findViewById(R.id.empty);
-
-                runOnUiThread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        onPostExecute();
-                        switch (responseCode) {
-                            case 200: {
-                                try {
-                                    editor.putString(getString(R.string.hard_reload_outbox), "false");
-                                    if(mDataList.size() > 0){
-                                        mDataList.clear();
-                                    }
-                                    JSONArray jArray = new JSONArray(sb.toString());
-                                    HashMap<String, JSONArray> map = new HashMap<>();
-                                    StringBuilder sb = new StringBuilder();
-                                    for (int i = 0; i < jArray.length(); ++i) {
-                                        JSONObject rec = jArray.getJSONObject(i);
-                                        rec = rec.getJSONObject("doc");
-                                        JSONObject value = rec.getJSONObject("value");
-                                        value.put("id", rec.getString("_id"));
-
-                                        if (obj.getString("band").trim().equals("3")) {
-                                            if (value.getString("status").trim().equals("acknowledged")) {
-                                                if (map.containsKey(value.getString("to"))) {
-                                                    map.get(value.getString("to")).put(value);
-                                                } else {
-                                                    mDataList.add(new ListData(value.getString("to")));
-                                                    sb.append(value.getString("to")).append(",");
-                                                    JSONArray arr = new JSONArray();
-                                                    arr.put(value);
-                                                    map.put(value.getString("to"), arr);
-                                                }
-
-                                            }
-
-                                        } else {
-                                            if (map.containsKey(value.getString("to"))) {
-                                                map.get(value.getString("to")).put(value);
-                                            } else {
-                                                mDataList.add(new ListData(value.getString("to")));
-                                                sb.append(value.getString("to")).append(",");
-                                                JSONArray arr = new JSONArray();
-                                                arr.put(value);
-                                                map.put(value.getString("to"), arr);
-                                            }
-                                        }
-                                    }
-
-                                    Log.d(TAG, "Caching orgs :" + map.keySet());
-                                    for (String s : map.keySet()) {
-                                        editor.putString(s + R.string.outbox, map.get(s).toString());
-                                    }
-                                    editor.putString(getString(R.string.hard_reload_outbox), "false");
-                                    editor.putString(obj.getString("id") + R.string.outbox, sb.toString());
-                                    editor.commit(); //TODO research on apply method
-
-                                    if (map.keySet().size() > 0) {
-                                        listView.setAdapter(new SampleAdapter());
-                                        empty.setVisibility(View.INVISIBLE);
-                                    } else {
-
-                                        empty.setText("Outbox is empty");
-                                        listView.setEmptyView(empty);
-                                    }
-                                    editor.commit(); //TODO research on apply method
-                                    break;
-                                } catch (org.json.JSONException e) {
-                                    e.printStackTrace();
-                                    Toast.makeText(context, "Something went wrong while retrieving Inbox, Please try again", Toast.LENGTH_SHORT).show();
-                                    break;
-                                }
-                            }
-                            case 404: {
-
-                                editor.putString(getString(R.string.hard_reload_outbox), "false");
-                                editor.commit(); //TODO research on apply method
-                                Log.d(TAG, "404 response");
-                                empty.setText(getString(R.string.no_outbox_order_msg));
-                                listView.setEmptyView(empty);
-                                break;
-
-                            }
-                        }
-                    }
-                });
-
-            } catch (IOException | JSONException | NullPointerException e) {
-                e.printStackTrace();
-                runOnUiThread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
-                    }
-                });
-                onPostExecute();
-            }
-            return null;
-        }
-
-        protected void onPostExecute() {
-            progress.dismiss();
-        }
-
-    }
 }
-
-

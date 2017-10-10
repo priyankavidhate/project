@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="true"
+        android:focusableInTouchMode="true"
+        tools:context="com.example.rohitvyavahare.project.PlaceOrderActivity">
+
+        <android.support.design.widget.AppBarLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:theme="@style/AppTheme.AppBarOverlay">
+
+            <android.support.v7.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="?attr/colorPrimary"
+                app:popupTheme="@style/AppTheme.PopupOverlay" />
+
+        </android.support.design.widget.AppBarLayout>
+
+        <ViewSwitcher xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/my_switcher_3"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/NoPairedOrg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="100sp"
+                android:gravity="center"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:text="@string/no_paired_orgs" />
+
+            <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:id="@+id/orderFrom"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="50sp"
+                android:paddingBottom="@dimen/activity_vertical_margin"
+                android:paddingLeft="@dimen/activity_horizontal_margin"
+                android:paddingRight="@dimen/activity_horizontal_margin"
+                android:paddingTop="@dimen/activity_vertical_margin"
+                android:shrinkColumns="*"
+                android:stretchColumns="*"
+                tools:context="com.example.rohitvyavahare.project.PlaceOrderActivity">
+
+                <!--<TextView-->
+                <!--android:id="@+id/OrgName"-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:layout_marginTop="50sp"-->
+                <!--android:nextFocusDown="@+id/EditOrgs"-->
+                <!--android:textSize="20sp" />-->
+
+                <!--<EditText-->
+                    <!--android:id="@+id/EditItem"-->
+                    <!--android:layout_width="match_parent"-->
+                    <!--android:layout_height="wrap_content"-->
+                    <!--android:layout_marginTop="20sp"-->
+                    <!--android:hint="@string/item"-->
+                    <!--android:inputType="textNoSuggestions" />-->
+
+                <!--<EditText-->
+                    <!--android:id="@+id/EditQuantity"-->
+                    <!--android:layout_width="match_parent"-->
+                    <!--android:layout_height="wrap_content"-->
+                    <!--android:layout_marginTop="20sp"-->
+                    <!--android:hint="@string/quantity"-->
+                    <!--android:maxLength="15"-->
+                    <!--android:inputType="text" />-->
+
+                <!--<TextView-->
+                    <!--android:id="@+id/addMore"-->
+                    <!--android:text="+Add more"-->
+                    <!--android:layout_width="match_parent"-->
+                    <!--android:layout_height="wrap_content"-->
+                    <!--android:layout_marginTop="20sp"-->
+                    <!--android:clickable="true"-->
+                    <!--android:gravity="end"-->
+                    <!--/>-->
+
+                <!--<EditText-->
+                    <!--android:id="@+id/EditMessage"-->
+                    <!--android:layout_width="match_parent"-->
+                    <!--android:layout_height="wrap_content"-->
+                    <!--android:layout_marginTop="20sp"-->
+                    <!--android:background="@drawable/back"-->
+                    <!--android:textAlignment="center"-->
+                    <!--android:hint="@string/message"-->
+                    <!--android:inputType="textMultiLine"-->
+                    <!--android:lines="8"-->
+                    <!--android:maxLines="10"-->
+                    <!--android:minLines="5"-->
+                    <!--android:scrollbars="vertical" />-->
+
+                <!--<Button-->
+                    <!--android:id="@+id/PlaceOrder"-->
+                    <!--android:layout_width="wrap_content"-->
+                    <!--android:layout_height="wrap_content"-->
+                    <!--android:layout_marginTop="20sp"-->
+                    <!--android:background="#00bfff"-->
+                    <!--android:gravity="center"-->
+                    <!--android:text="Place an Order"-->
+                    <!--android:textColor="#ffffff" />-->
+
+            </TableLayout>
+
+        </ViewSwitcher>
+
+    </android.support.design.widget.CoordinatorLayout>
+</ScrollView>

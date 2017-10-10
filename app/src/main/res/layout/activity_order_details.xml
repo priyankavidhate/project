@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+
 <android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -14,7 +16,7 @@
             android:id="@+id/viewA"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="0.780"
+            android:layout_weight="0.880"
             android:background="#fe7f24"
             android:orientation="vertical">
 
@@ -54,23 +56,23 @@
                         android:layout_height="wrap_content"
                         android:layout_marginLeft="15sp"
                         android:layout_marginStart="15sp"
-                        android:layout_marginTop="15sp"
+                        android:layout_marginTop="5sp"
                         android:textColor="@color/white"
-                        android:textSize="30sp" />
+                        android:textSize="25sp" />
 
-                    <TextView
-                        android:id="@+id/Qunatity"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10sp"
-                        android:textColor="@color/white"
-                        android:textSize="15sp" />
+                    <!--<TextView-->
+                    <!--android:id="@+id/Qunatity"-->
+                    <!--android:layout_width="wrap_content"-->
+                    <!--android:layout_height="wrap_content"-->
+                    <!--android:layout_marginTop="10sp"-->
+                    <!--android:textColor="@color/white"-->
+                    <!--android:textSize="15sp" />-->
 
                     <TextView
                         android:id="@+id/Line1"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10sp"
+                        android:layout_marginTop="2sp"
                         android:textColor="@color/white"
                         android:textSize="12sp" />
 
@@ -78,10 +80,21 @@
                         android:id="@+id/Line2"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="5sp"
+                        android:layout_marginTop="1.5sp"
                         android:textColor="@color/white"
                         android:textSize="12sp" />
                 </LinearLayout>
+                <android.support.design.widget.FloatingActionButton
+                    android:id="@+id/editOrder"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="16dp"
+                    android:clickable="true"
+                    android:src="@drawable/ic_mode_edit_black_24dp"
+                    android:tint="@color/white"
+                    app:backgroundTint="#fe6224"
+                    app:layout_anchor="@id/viewA"
+                    app:layout_anchorGravity="bottom|right|end" />
             </LinearLayout>
         </LinearLayout>
 
@@ -89,8 +102,131 @@
             android:id="@+id/viewB"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="0.220"
+            android:layout_weight="0.120"
             android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10sp"
+                android:orientation="horizontal">
+
+                <TableLayout
+                    xmlns:tools="http://schemas.android.com/tools"
+                    android:id="@+id/ShipmentTable"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:paddingBottom="@dimen/activity_vertical_margin"
+                    android:paddingLeft="@dimen/activity_horizontal_margin"
+                    android:paddingRight="@dimen/activity_horizontal_margin"
+                    android:paddingTop="@dimen/activity_vertical_margin"
+                    tools:context="com.example.rohitvyavahare.project.OrderDetailsActivity">
+                </TableLayout>
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10sp"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.1"
+                    android:orientation="vertical">
+
+                    <CheckedTextView
+                        android:id="@+id/ViewCreatedBy"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="10sp"
+                        android:layout_marginRight="20sp"
+                        android:checkMarkTint="@color/green_500"
+                        android:clickable="true"
+                        android:drawableLeft="@drawable/ic_done_black_24dp"
+                        android:drawableRight="@null"
+                        android:gravity="center"
+                        android:textAlignment="gravity" />
+
+                    <CheckedTextView
+                        android:id="@+id/ViewAcknowledgedBy"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="10sp"
+                        android:layout_marginRight="20sp"
+                        android:checkMarkTint="@color/green_500"
+                        android:clickable="true"
+                        android:drawableLeft="@drawable/ic_done_black_24dp"
+                        android:drawableRight="@null"
+                        android:gravity="center"
+                        android:textAlignment="gravity" />
+
+                    <CheckedTextView
+                        android:id="@+id/ViewShippedBy"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="10sp"
+                        android:layout_marginRight="20sp"
+                        android:checkMarkTint="@color/green_500"
+                        android:clickable="true"
+                        android:drawableLeft="@drawable/ic_done_black_24dp"
+                        android:drawableRight="@null"
+                        android:gravity="center"
+                        android:textAlignment="gravity" />
+
+                    <CheckedTextView
+                        android:id="@+id/ViewCompleteddBy"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="10sp"
+                        android:layout_marginRight="20sp"
+                        android:checkMarkTint="@color/green_500"
+                        android:clickable="true"
+                        android:drawableLeft="@drawable/ic_done_black_24dp"
+                        android:drawableRight="@null"
+                        android:gravity="center"
+                        android:textAlignment="gravity" />
+
+                    <CheckedTextView
+                        android:id="@+id/ViewReceivedBy"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="10sp"
+                        android:layout_marginRight="20sp"
+                        android:checkMarkTint="@color/green_500"
+                        android:clickable="true"
+                        android:drawableLeft="@drawable/ic_done_black_24dp"
+                        android:drawableRight="@null"
+                        android:gravity="center"
+                        android:textAlignment="gravity" />
+
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/StatusLinearLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10sp"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/ViewReceiverCompletedStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center_horizontal"
+                        android:padding="12dp"
+                        android:textSize="20sp" />
+                </LinearLayout>
+            </LinearLayout>
 
             <ViewSwitcher xmlns:android="http://schemas.android.com/apk/res/android"
                 android:id="@+id/my_switcher_2"
@@ -99,75 +235,111 @@
                 android:gravity="center"
                 android:orientation="vertical">
 
-                <TextView
-                    android:id="@+id/ViewReceiverCompletedStatus"
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginBottom="5dp"
-                    android:layout_marginLeft="24dp"
-                    android:layout_marginRight="24dp"
-                    android:layout_marginTop="74dp"
-                    android:padding="12dp"
-                    android:gravity="center"
-                    android:textSize="20sp" />
-
-                <android.support.v7.widget.AppCompatButton
-                    android:id="@+id/btn_change_status"
-                    android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="5dp"
-                    android:layout_marginLeft="24dp"
-                    android:layout_marginRight="24dp"
-                    android:layout_marginTop="74dp"
-                    android:background="#FE7E24"
-                    android:padding="12dp"
-                    android:textColor="#ffffff" />
+                    android:layout_marginTop="10sp"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="0.6"
+                        android:orientation="vertical">
+
+
+                        <android.support.v7.widget.AppCompatButton
+                            android:id="@+id/btn_change_status"
+                            android:layout_width="fill_parent"
+                            android:layout_height="wrap_content"
+
+                            android:layout_marginBottom="24dp"
+                            android:layout_marginEnd="5sp"
+                            android:layout_marginLeft="5dp"
+                            android:layout_marginRight="10dp"
+                            android:layout_marginStart="5sp"
+                            android:layout_marginTop="10sp"
+                            android:background="#FE7E24"
+                            android:padding="12dp"
+                            android:textColor="#ffffff" />
+                    </LinearLayout>
+
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="0.4"
+                        android:orientation="vertical">
+
+                        <android.support.v7.widget.AppCompatButton
+                            android:id="@+id/btn_cancel_order"
+                            android:layout_width="fill_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="24dp"
+                            android:layout_marginEnd="5sp"
+                            android:layout_marginLeft="5dp"
+                            android:layout_marginRight="10dp"
+                            android:layout_marginStart="5sp"
+                            android:layout_marginTop="10sp"
+                            android:background="#bf4040"
+                            android:padding="12dp"
+                            android:text="@string/cancel_order"
+                            android:textColor="#ffffff" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10sp"
+                    android:orientation="horizontal">
+
+                    <android.support.v7.widget.AppCompatButton
+                        android:id="@+id/btn_single_status"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="24sp"
+                        android:layout_marginLeft="24dp"
+                        android:layout_marginRight="24dp"
+                        android:layout_marginStart="24sp"
+                        android:layout_marginTop="14dp"
+                        android:background="#FE7E24"
+                        android:padding="12dp"
+                        android:textColor="#ffffff" />
+                </LinearLayout>
+
             </ViewSwitcher>
 
-            <android.support.v7.widget.AppCompatButton
-                android:id="@+id/btn_cancel_order"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:layout_marginLeft="24dp"
-                android:layout_marginRight="24dp"
-                android:layout_marginTop="10dp"
-                android:background="#bf4040"
-                android:padding="12dp"
-                android:text="Cancel Order"
-                android:textColor="#ffffff" />
-
-            <ListView xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
-                android:id="@+id/listView"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                tools:context="com.example.rohitvyavahare.project.OrderDetailsActivity">
+                android:orientation="vertical">
 
-            </ListView>
+                <ListView xmlns:android="http://schemas.android.com/apk/res/android"
+                    xmlns:tools="http://schemas.android.com/tools"
+                    android:id="@+id/listView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    tools:context="com.example.rohitvyavahare.project.OrderDetailsActivity">
 
-            <TextView
-                android:id="@+id/empty"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                android:gravity="center"
-                android:text="No Comments"
-                android:layout_marginBottom="5dp"
-                android:textSize="20sp" />
+                </ListView>
+
+                <TextView
+                    android:id="@+id/empty"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:layout_marginBottom="5dp"
+                    android:gravity="center"
+                    android:text="No Comments"
+                    android:textSize="20sp" />
+
+            </LinearLayout>
+
+
         </LinearLayout>
 
     </LinearLayout>
-
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/fab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:clickable="true"
-        android:src="@drawable/ic_mode_edit_black_24dp"
-        android:tint="@color/white"
-        app:backgroundTint="#fe6224"
-        app:layout_anchor="@id/viewA"
-        app:layout_anchorGravity="bottom|right|end" />
 
 </android.support.design.widget.CoordinatorLayout>

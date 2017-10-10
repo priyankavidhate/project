@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
@@ -29,9 +28,10 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.mikhaellopez.circularimageview.CircularImageView;
+import com.rohitvyavahare.Data.Storage;
+import com.rohitvyavahare.webservices.PostFeedback;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -49,6 +49,8 @@ public class SettingActivity extends AppCompatActivity
     Utils util = new Utils();
     private static final String TAG = "SettingActivity";
     private List<ListData> mDataList = new ArrayList<>();
+    Storage storage;
+    Context c;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +63,8 @@ public class SettingActivity extends AppCompatActivity
         rl.addView(layout);
         prefs = getSharedPreferences(getString(R.string.private_file), MODE_PRIVATE);
         editor = prefs.edit();
+        c = this;
+        storage = new Storage(this);
 
         Toolbar toolbar;
         toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -105,6 +109,10 @@ public class SettingActivity extends AppCompatActivity
         listView.setAdapter(new SampleAdapter());
 
         mDataList.add(new ListData("Change Organization"));
+        mDataList.add(new ListData("Edit Organization"));
+        mDataList.add(new ListData("View Organization"));
+        mDataList.add(new ListData("Add Items"));
+        mDataList.add(new ListData("Edit Profile"));
         mDataList.add(new ListData("Payment"));
         mDataList.add(new ListData("Feedback"));
         mDataList.add(new ListData("Hard Reset"));
@@ -123,7 +131,7 @@ public class SettingActivity extends AppCompatActivity
 
                         try{
 
-                            final JSONArray arr = new JSONArray(prefs.getString("orgs", "[]"));
+                            final JSONArray arr = storage.getAssociatedOrgs();
 
                             final ArrayList<String> orgs_arr = new ArrayList<>();
                             for(int i=0; i< arr.length(); i++){
@@ -161,15 +169,17 @@ public class SettingActivity extends AppCompatActivity
 
                                         for(int i=0; i<arr.length(); i++){
                                             JSONObject obj = arr.getJSONObject(i);
-                                            if(obj.has("name") && obj.getString("name").equals(orgName)){
-                                                editor.putString("default_org", obj.toString());
-                                                editor.commit();
+                                            if(obj.has("name") && obj.getString("name").equals(orgName) && obj.has("id")){
+                                                if(storage.getPairedOrgs(obj.getString("id")) == null || storage.getDefaultOrg().getString("id").length() == 0){
+                                                    storage.setHardResetPairedOrgs("true");
+                                                }
+                                                storage.setDefaultOrg(obj.toString());
                                             }
 
                                         }
 
                                     }
-                                    catch(JSONException e){
+                                    catch(Exception e){
                                         e.printStackTrace();
                                     }
 
@@ -178,34 +188,39 @@ public class SettingActivity extends AppCompatActivity
                             builder.show();
 
                         }
-                        catch (JSONException e){
+                        catch (Exception e){
                             e.printStackTrace();
                         }
 
                         break;
                     }
+
+                    case 1: {
+
+                        Intent intent = new Intent(SettingActivity.this, EditOrgActivity.class);
+                        startActivity(intent);
+                        break;
+                    }
+                    case 2: {
+
+                        Intent intent = new Intent(SettingActivity.this, ViewOrgDetailsActivity.class);
+                        startActivity(intent);
+                        break;
+                    }
+
                     case 3: {
 
-                        editor.putString(getString(R.string.hard_reload_inbox), "true");
-                        editor.putString(getString(R.string.hard_reload_outbox), "true");
-                        editor.putString(getString(R.string.hard_reload_pair_org), "true");
-                        editor.commit();
-
-                        new AlertDialog.Builder(SettingActivity.this)
-                                .setTitle("Success")
-                                .setMessage("Hard reset applied successfully")
-                                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int which) {
-
-                                    }
-                                })
-                                .setIcon(R.drawable.ic_done_black_24dp)
-                                .show();
-
+                        Intent intent = new Intent(SettingActivity.this, OrgItemsActivity.class);
+                        startActivity(intent);
                         break;
-
                     }
-                    case 1: {
+                    case 4: {
+
+                        Intent intent = new Intent(SettingActivity.this, EditProfileActivity.class);
+                        startActivity(intent);
+                        break;
+                    }
+                    case 5: {
 
                         new AlertDialog.Builder(SettingActivity.this)
                                 .setTitle("Payment details")
@@ -220,7 +235,7 @@ public class SettingActivity extends AppCompatActivity
                         break;
 
                     }
-                    case 2: {
+                    case 6: {
 
                         AlertDialog.Builder builder = new AlertDialog.Builder(SettingActivity.this);
                         builder.setTitle("Add comment");
@@ -236,16 +251,16 @@ public class SettingActivity extends AppCompatActivity
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
 
-                                final String msg = input.getText().toString();
-                                AsyncTask.execute(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Utils util = new Utils();
-                                        util.sendFeedback(SettingActivity.this, msg);
-                                    }
-                                });
+                                try {
+                                    final String msg = input.getText().toString();
+                                    Bundle input = new Bundle();
+                                    input.putString("message", msg);
+                                    new PostFeedback(c, storage).execute(input).get();
 
-                            }
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+
+                                }}
 
                         });
 
@@ -257,9 +272,28 @@ public class SettingActivity extends AppCompatActivity
                         });
 
                         builder.show();
+                        break;
                     }
+                    case 7: {
 
-                    break;
+                        storage.setHardResetOutbox("true");
+                        storage.setHardResetPairedOrgs("true");
+                        storage.setHardResetInbox("true");
+
+                        new AlertDialog.Builder(SettingActivity.this)
+                                .setTitle("Success")
+                                .setMessage("Hard reset applied successfully")
+                                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+
+                                    }
+                                })
+                                .setIcon(R.drawable.ic_done_black_24dp)
+                                .show();
+
+                        break;
+
+                    }
 
                 }
             }
@@ -287,7 +321,7 @@ public class SettingActivity extends AppCompatActivity
             public View getView(final int position, View convertView, ViewGroup parent) {
                 final ViewHolder holder;
                 if (convertView == null) {
-                    convertView = View.inflate(SettingActivity.this, R.layout.list_item_layout, null);
+                    convertView = View.inflate(SettingActivity.this, R.layout.list_setting_items, null);
                     holder = new ViewHolder(convertView);
                     convertView.setTag(holder);
                 } else {
@@ -319,7 +353,7 @@ public class SettingActivity extends AppCompatActivity
 
             private String data;
 
-            public ListData(String data) {
+            ListData(String data) {
                 this.data = data;
             }
 
@@ -365,6 +399,7 @@ public class SettingActivity extends AppCompatActivity
 
                 case R.id.nav_inbox: {
                     intent = new Intent(SettingActivity.this, InboxActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     startActivity(intent);
                     break;
 
@@ -373,6 +408,7 @@ public class SettingActivity extends AppCompatActivity
                 case R.id.nav_outbox: {
 
                     intent = new Intent(SettingActivity.this, OutboxActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     startActivity(intent);
                     break;
 
@@ -381,6 +417,7 @@ public class SettingActivity extends AppCompatActivity
                 case R.id.nav_add_employee: {
 
                     intent = new Intent(SettingActivity.this, AddEmployeeActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     startActivity(intent);
                     break;
 
@@ -389,6 +426,7 @@ public class SettingActivity extends AppCompatActivity
                 case R.id.nav_pair_prg: {
 
                     intent = new Intent(SettingActivity.this, PairOrgActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     startActivity(intent);
                     break;
 
@@ -397,6 +435,7 @@ public class SettingActivity extends AppCompatActivity
                 case R.id.nav_add_org: {
 
                     intent = new Intent(SettingActivity.this, CreateOrgActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     startActivity(intent);
                     break;
 
@@ -405,6 +444,7 @@ public class SettingActivity extends AppCompatActivity
                 case R.id.nav_settings: {
 
                     intent = new Intent(SettingActivity.this, SettingActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     startActivity(intent);
                     break;
 

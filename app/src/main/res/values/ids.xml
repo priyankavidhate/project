@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="OrgName" type="id" />
+    <item name="EditItem" type="id" />
+    <item name="editQuantity" type="id" />
+    <item name="editItem1" type="id" />
+    <item name="editQuantity1" type="id" />
+    <item name="editItem2" type="id" />
+    <item name="editQuantity2" type="id" />
+    <item name="editItem3" type="id" />
+    <item name="editQuantity3" type="id" />
+    <item name="editItem4" type="id" />
+    <item name="editQuantity4" type="id" />
+    <item name="editItem5" type="id" />
+    <item name="editQuantity5" type="id" />
+    <item name="editItem6" type="id" />
+    <item name="editQuantity6" type="id" />
+    <item name="editItem7" type="id" />
+    <item name="editQuantity7" type="id" />
+    <item name="editItem8" type="id" />
+    <item name="editQuantity8" type="id" />
+    <item name="editItem9" type="id" />
+    <item name="editQuantity9" type="id" />
+    <item name="editItem10" type="id" />
+    <item name="editQuantity10" type="id" />
+    <item name="editItem11" type="id" />
+    <item name="editQuantity11" type="id" />
+    <item name="editItem12" type="id" />
+    <item name="editQuantity12" type="id" />
+    <item name="editItem13" type="id" />
+    <item name="editQuantity13" type="id" />
+    <item name="editItem14" type="id" />
+    <item name="editQuantity14" type="id" />
+    <item name="editItem15" type="id" />
+    <item name="editQuantity15" type="id" />
+    <item name="editItem16" type="id" />
+    <item name="editQuantity16" type="id" />
+    <item name="editItem17" type="id" />
+    <item name="editQuantity17" type="id" />
+    <item name="editItem18" type="id" />
+    <item name="editQuantity18" type="id" />
+    <item name="editItem19" type="id" />
+    <item name="editQuantity19" type="id" />
+    <item name="editItem20" type="id" />
+    <item name="editQuantity20" type="id" />
+
+
+    <item name="editMessage" type="id" />
+    <item name="PlaceOrder" type="id" />
+    <item name="addMore" type="id" />
+    <item name="removeItem" type="id" />
+    <item name="editItem" type="id" />
+
+    <item name="order1" type="id" />
+    <item name="order2" type="id" />
+    <item name="order3" type="id" />
+    <item name="order4" type="id" />
+    <item name="order5" type="id" />
+    <item name="order6" type="id" />
+    <item name="order7" type="id" />
+    <item name="order8" type="id" />
+    <item name="order9" type="id" />
+    <item name="order10" type="id" />
+    <item name="order11" type="id" />
+    <item name="order12" type="id" />
+    <item name="order13" type="id" />
+    <item name="order14" type="id" />
+    <item name="order15" type="id" />
+    <item name="order16" type="id" />
+    <item name="order17" type="id" />
+    <item name="order18" type="id" />
+    <item name="order19" type="id" />
+    <item name="order20" type="id" />
+    <item name="order21" type="id" />
+
+    <item name="qunatity1" type="id" />
+    <item name="qunatity2" type="id" />
+    <item name="qunatity3" type="id" />
+    <item name="qunatity4" type="id" />
+    <item name="qunatity5" type="id" />
+    <item name="qunatity6" type="id" />
+    <item name="qunatity7" type="id" />
+    <item name="qunatity8" type="id" />
+    <item name="qunatity9" type="id" />
+    <item name="qunatity10" type="id" />
+    <item name="qunatity11" type="id" />
+    <item name="qunatity12" type="id" />
+    <item name="qunatity13" type="id" />
+    <item name="qunatity14" type="id" />
+    <item name="qunatity15" type="id" />
+    <item name="qunatity16" type="id" />
+    <item name="qunatity17" type="id" />
+    <item name="qunatity18" type="id" />
+    <item name="qunatity19" type="id" />
+    <item name="qunatity20" type="id" />
+    <item name="qunatity21" type="id" />
+
+
+
+
+    <array name="itemIds">
+        <item>@id/editItem1</item>
+        <item>@id/editItem2</item>
+        <item>@id/editItem3</item>
+        <item>@id/editItem4</item>
+        <item>@id/editItem5</item>
+        <item>@id/editItem6</item>
+        <item>@id/editItem7</item>
+        <item>@id/editItem8</item>
+        <item>@id/editItem9</item>
+        <item>@id/editItem10</item>
+        <item>@id/editItem11</item>
+        <item>@id/editItem12</item>
+        <item>@id/editItem13</item>
+        <item>@id/editItem14</item>
+        <item>@id/editItem15</item>
+        <item>@id/editItem16</item>
+        <item>@id/editItem17</item>
+        <item>@id/editItem18</item>
+        <item>@id/editItem19</item>
+        <item>@id/editItem20</item>
+    </array>
+
+    <array name="quantityIds">
+        <item>@id/editQuantity1</item>
+        <item>@id/editQuantity2</item>
+        <item>@id/editQuantity3</item>
+        <item>@id/editQuantity4</item>
+        <item>@id/editQuantity5</item>
+        <item>@id/editQuantity6</item>
+        <item>@id/editQuantity7</item>
+        <item>@id/editQuantity8</item>
+        <item>@id/editQuantity9</item>
+        <item>@id/editQuantity10</item>
+        <item>@id/editQuantity11</item>
+        <item>@id/editQuantity12</item>
+        <item>@id/editQuantity13</item>
+        <item>@id/editQuantity14</item>
+        <item>@id/editQuantity15</item>
+        <item>@id/editQuantity16</item>
+        <item>@id/editQuantity17</item>
+        <item>@id/editQuantity18</item>
+        <item>@id/editQuantity19</item>
+        <item>@id/editQuantity20</item>
+    </array>
+
+    <array name="orderIds">
+        <item>@id/order1</item>
+        <item>@id/order2</item>
+        <item>@id/order3</item>
+        <item>@id/order4</item>
+        <item>@id/order5</item>
+        <item>@id/order6</item>
+        <item>@id/order7</item>
+        <item>@id/order8</item>
+        <item>@id/order9</item>
+        <item>@id/order10</item>
+        <item>@id/order11</item>
+        <item>@id/order12</item>
+        <item>@id/order13</item>
+        <item>@id/order14</item>
+        <item>@id/order15</item>
+        <item>@id/order16</item>
+        <item>@id/order17</item>
+        <item>@id/order18</item>
+        <item>@id/order19</item>
+        <item>@id/order20</item>
+        <item>@id/order21</item>
+    </array>
+
+    <array name="orderQunatityIds">
+        <item>@id/qunatity1</item>
+        <item>@id/qunatity2</item>
+        <item>@id/qunatity3</item>
+        <item>@id/qunatity4</item>
+        <item>@id/qunatity5</item>
+        <item>@id/qunatity6</item>
+        <item>@id/qunatity7</item>
+        <item>@id/qunatity8</item>
+        <item>@id/qunatity9</item>
+        <item>@id/qunatity10</item>
+        <item>@id/qunatity11</item>
+        <item>@id/qunatity12</item>
+        <item>@id/qunatity13</item>
+        <item>@id/qunatity14</item>
+        <item>@id/qunatity15</item>
+        <item>@id/qunatity16</item>
+        <item>@id/qunatity17</item>
+        <item>@id/qunatity18</item>
+        <item>@id/qunatity19</item>
+        <item>@id/qunatity20</item>
+        <item>@id/qunatity21</item>
+    </array>
+
+
+
+</resources>

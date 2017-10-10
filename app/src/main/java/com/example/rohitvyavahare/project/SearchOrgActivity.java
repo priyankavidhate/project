@@ -245,7 +245,7 @@ public class SearchOrgActivity extends AppCompatActivity {
 
         private String data, data1, data2;
 
-        public ListData(String data, String data1, String data2) {
+        ListData(String data, String data1, String data2) {
 
             this.data = data;
             this.data1 = data1;
@@ -257,7 +257,7 @@ public class SearchOrgActivity extends AppCompatActivity {
 
         private final Context context;
 
-        public GetClass(Context c) {
+        GetClass(Context c) {
             this.context = c;
         }
 
@@ -275,9 +275,14 @@ public class SearchOrgActivity extends AppCompatActivity {
                 final TextView empty = (TextView) findViewById(R.id.empty);
 
                 String type = "name";
-                if (query.charAt(0) == '@') {
-                    type = "tag";
+                if(query.length() > 0){
+
+                    if (query.charAt(0) == '@') {
+                        type = "tag";
+                    }
+
                 }
+
 
                 if (mDataList.size() > 0) {
                     mDataList.clear();
@@ -341,7 +346,8 @@ public class SearchOrgActivity extends AppCompatActivity {
                         Log.d(TAG, "Adding org to backlist :"+ org.getString("name") );
                         orgs_arr.add(org.getString("name"));
 
-                        String paired_orgs = prefs.getString(org.getString("name") + R.string.paired_orgs, "[{type : null}]");
+//                        String paired_orgs = prefs.getString(org.getString("name") + R.string.paired_orgs, "[{type : null}]");
+                        String paired_orgs = prefs.getString(org.getString("tag") + getString(R.string.paired_orgs), "[{type : null}]");
                         Log.d(TAG, "paired_Orgs :" + paired_orgs);
                         JSONArray arr = new JSONArray(paired_orgs);
 
@@ -412,7 +418,7 @@ public class SearchOrgActivity extends AppCompatActivity {
                             }
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            Toast.makeText(SearchOrgActivity.this.getApplicationContext(), "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(SearchOrgActivity.this.getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                         //Do your UI operations like dialog opening or Toast here
                     }
@@ -421,7 +427,13 @@ public class SearchOrgActivity extends AppCompatActivity {
 
             } catch (IOException | JSONException e) {
                 e.printStackTrace();
-                Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+                runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
             return null;
         }

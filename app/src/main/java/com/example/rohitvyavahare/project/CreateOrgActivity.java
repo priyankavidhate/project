@@ -43,6 +43,7 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.mikhaellopez.circularimageview.CircularImageView;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -68,9 +69,9 @@ public class CreateOrgActivity extends AppCompatActivity
     private static final int SELECT_PICTURE = 1;
     private ProgressDialog mProgressDialog;
     FirebaseStorage storage = FirebaseStorage.getInstance();
-    private UploadTask uploadTask;
     private String state = "";
-    private ActionBarDrawerToggle toggle;
+    private  SharedPreferences.Editor editor;
+    private Bitmap orgBitMap = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,6 +83,7 @@ public class CreateOrgActivity extends AppCompatActivity
         View layout = layoutInflater.inflate(R.layout.activity_create_org, null, true);
         rl.addView(layout);
 
+        ActionBarDrawerToggle toggle;
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -162,16 +164,18 @@ public class CreateOrgActivity extends AppCompatActivity
     @Override
     public void onClick(View v) {
 
-        EditText orgName, orgBranch, department, orgAddress, orgCity, orgZip;
+        UploadTask uploadTask;
 
-        TextView orgCountry;
-        final Intent intent;
-        final JSONObject org = new JSONObject();
+            EditText orgName, orgBranch, department, orgAddress, orgCity, orgZip;
 
-        int i = v.getId();
-        if (i == R.id.EditProfilePic) {
-            intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-            startActivityForResult(intent, SELECT_PICTURE);
+            TextView orgCountry;
+            final Intent intent;
+            final JSONObject org = new JSONObject();
+
+            int i = v.getId();
+            if (i == R.id.EditProfilePic) {
+                intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                startActivityForResult(intent, SELECT_PICTURE);
         } else if (i == R.id.btn_creat_org) {
 
             boolean failFlag = false;
@@ -264,7 +268,7 @@ public class CreateOrgActivity extends AppCompatActivity
 
             }
 
-            if (bitmap != null && !failFlag) {
+            if (orgBitMap != null && !failFlag) {
 
                 mProgressDialog = new ProgressDialog(this);
                 mProgressDialog.setMessage("Loading");
@@ -352,8 +356,8 @@ public class CreateOrgActivity extends AppCompatActivity
                 Uri selectedImage = data.getData();
                 Log.d(TAG, "selectedImageUri: " + selectedImage.toString());
                 CircularImageView imageView = (CircularImageView) findViewById(R.id.EditProfilePic);
-                bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(selectedImage));
-                imageView.setImageBitmap(bitmap);
+                orgBitMap = BitmapFactory.decodeStream(getContentResolver().openInputStream(selectedImage));
+                imageView.setImageBitmap(orgBitMap);
             }
         } catch (java.io.FileNotFoundException | java.lang.NullPointerException e) {
             Log.e(TAG, e.toString());
@@ -663,6 +667,41 @@ public class CreateOrgActivity extends AppCompatActivity
 
                                 case 200: {
 
+                                    String orgs_string = prefs.getString("orgs", "null");
+                                    Log.d(TAG, "orgs_string :" + orgs_string);
+
+                                    JSONObject result = new JSONObject(sb.toString());
+
+                                    if(!result.has("id")){
+                                        throw new org.json.JSONException("Result from server does not have id for org");
+                                    }
+
+                                    newOrg.put("id", result.getString("id"));
+
+                                    JSONArray orgs;
+
+                                    if (orgs_string.equals("null")) {
+                                        orgs = new JSONArray();
+                                    }
+                                    else {
+                                        orgs = new JSONArray(orgs_string);
+                                    }
+                                    Log.d(TAG, "orgs :" + orgs.toString());
+
+                                    for (int i = 0; i < orgs.length(); i++) {
+
+                                        JSONObject org = orgs.getJSONObject(i);
+
+                                        if (org.has("id") && org.getString("id").equals(newOrg.getString("id"))) {
+                                            Log.d(TAG, "Org is present");
+                                            throw new org.json.JSONException("Org already present");
+                                        }
+                                    }
+                                    orgs.put(newOrg);
+                                    editor = prefs.edit();
+                                    editor.putString("orgs", orgs.toString());
+                                    editor.apply();
+
                                     new AlertDialog.Builder(context)
                                             .setTitle("Success")
                                             .setMessage("Organization  " + newOrg.getString("name") + " created successfully")
@@ -685,16 +724,23 @@ public class CreateOrgActivity extends AppCompatActivity
 
                         } catch (org.json.JSONException e) {
                             e.printStackTrace();
-                            Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
                             onPostExecute();
                         }
 
                     }
                 });
 
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 e.printStackTrace();
-                Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+                runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        onPostExecute();
+                        Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
                 onPostExecute();
             }
             return null;

@@ -232,7 +232,7 @@ public class PairOrgDetailsActivity extends AppCompatActivity  implements View.O
 
                 @Override
                 public void run() {
-                    Toast.makeText(PairOrgDetailsActivity.this, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(PairOrgDetailsActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -349,6 +349,23 @@ public class PairOrgDetailsActivity extends AppCompatActivity  implements View.O
                                         .show();
                                 break;
                             }
+                            case 409:{
+
+                                new AlertDialog.Builder(context)
+                                        .setTitle("Error")
+                                        .setMessage("Request already pending")
+                                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                                            public void onClick(DialogInterface dialog, int which) {
+                                                Intent intent = new Intent(PairOrgDetailsActivity.this, PairOrgActivity.class);
+                                                startActivity(intent);
+                                                finish();
+                                            }
+                                        })
+                                        .setIcon(android.R.drawable.ic_dialog_alert)
+                                        .show();
+                                break;
+
+                            }
 
                             default: {
                                 Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
@@ -365,7 +382,7 @@ public class PairOrgDetailsActivity extends AppCompatActivity  implements View.O
                     @Override
                     public void run() {
                         onPostExecute();
-                        Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
             }
@@ -382,7 +399,7 @@ public class PairOrgDetailsActivity extends AppCompatActivity  implements View.O
 
         private Context context;
 
-        public ActionClass(Context c) {
+        ActionClass(Context c) {
             this.context = c;
         }
 
@@ -486,7 +503,8 @@ public class PairOrgDetailsActivity extends AppCompatActivity  implements View.O
                                     }
 
                                     if(body.has("action") && body.getString("action").equals("accept") && d_org.has("name")){
-                                        String paired_orgs = prefs.getString(d_org.getString("name") + R.string.paired_orgs, "null");
+//                                        String paired_orgs = prefs.getString(d_org.getString("name") + R.string.paired_orgs, "null");
+                                        String paired_orgs = prefs.getString(d_org.getString("tag") + getString(R.string.paired_orgs), "null");
                                         JSONArray arr ;
                                         if(paired_orgs.equals("null")){
                                             arr = new JSONArray();
@@ -496,11 +514,13 @@ public class PairOrgDetailsActivity extends AppCompatActivity  implements View.O
 
                                         }
                                         arr.put(body.get("first_org"));
-                                        editor.putString(d_org.getString("name") + R.string.paired_orgs, arr.toString());
+//                                        editor.putString(d_org.getString("name") + R.string.paired_orgs, arr.toString());
+                                        editor.putString(d_org.getString("tag") + getString(R.string.paired_orgs), arr.toString());
 
                                     }
 
-                                    editor.putString(d_org.getString("name") + R.string.incoming_request, p_org.toString());
+//                                    editor.putString(d_org.getString("name") + R.string.incoming_request, p_org.toString());
+                                    editor.putString(d_org.getString("tag") + getString(R.string.incoming_request), p_org.toString());
 
                                     editor.commit();
 
@@ -520,7 +540,7 @@ public class PairOrgDetailsActivity extends AppCompatActivity  implements View.O
 
                         } catch (org.json.JSONException e) {
                             e.printStackTrace();
-                            Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
                             onPostExecute();
                         }
 
@@ -534,7 +554,7 @@ public class PairOrgDetailsActivity extends AppCompatActivity  implements View.O
                     @Override
                     public void run() {
                         onPostExecute();
-                        Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
 

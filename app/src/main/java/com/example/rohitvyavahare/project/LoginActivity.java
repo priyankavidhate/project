@@ -32,14 +32,15 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         SharedPreferences prefs = getSharedPreferences(getString(R.string.private_file), MODE_PRIVATE);
         String string = prefs.getString("uid", "null");
         if(!string.equals("null")) {
+            Log.d(TAG, "Starting Inbox activity");
             Intent intent = new Intent(LoginActivity.this, InboxActivity.class);
+//            Intent intent = new Intent(LoginActivity.this, OrgItemsActivity.class);
             intent.putExtra("uid", getString(R.string.private_file));
             startActivity(intent);
             finish();
         }
 
         findViewById(R.id.btn_send_code).setOnClickListener(LoginActivity.this);
-
     }
 
     @Override
@@ -64,7 +65,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                 bundle.putString("CC", cc);
                 new GetClass(this).execute(bundle);
             }
-
         }
     }
 
