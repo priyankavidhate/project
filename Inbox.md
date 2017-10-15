@@ -5,7 +5,7 @@
 ```
 GET  /org/pair/:orgId
 Header Authorization : Id 
-Id is you got when you creat account
+Id is you got when you create account
 ```
 
 Response
@@ -40,7 +40,7 @@ Response
 ```
 GET  /account/:Id/orgs
 Header Authorization : Id 
-Id is, you got when you creat an account
+Id is, you got when you create an account
 ```
 
 Response
@@ -85,7 +85,7 @@ Response
 ```
 GET  /org/:OrgId/inbox
 Header Authorization : Id 
-Id is, you got when you creat an account
+Id is, you got when you create an account
 And OrgId is organization id for which you want to get Inbox
 ```
 
