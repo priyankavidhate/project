@@ -1,5 +1,7 @@
 # Sign Up Endpoints 
 
+### Send verification code
+
 ```
 GET /authy/verify/:CountryCode/:PhoneNumber
 ```
@@ -10,6 +12,8 @@ Response
 Status Code - 200 : Sucess, user will recieve SMS with verification code.
 Status Code - 500 : Failure, Something went wrong either with our backend is down or sms service is down. 
 ```
+
+### Verify SMS
 
 ```
 GET /authy/verify/code?phone_number=XXXXXXXXXX&country_code=XXX?verification_code=XXXXXX
@@ -22,6 +26,7 @@ Status Code - 200 : Sucess, user will recieve SMS with verification code.
 Status Code - 500 : Failure, Something went wrong either with our backend is down or sms service is down or VerificationCode is wrong. 
 ```
 
+### Create account 
 ```
 POST /onboard
 ```
