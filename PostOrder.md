@@ -1,5 +1,5 @@
 
-# Order Details Endpoints
+# Create Order Endpoints
 
 
 ```
@@ -47,7 +47,7 @@ Body
 				"quantity": "12"
 			}
 		]
-    "status": "created"
+    		"status": "created"
 	}
 }
 ```
