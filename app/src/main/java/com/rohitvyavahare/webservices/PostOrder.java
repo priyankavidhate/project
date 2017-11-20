@@ -1,6 +1,5 @@
 package com.rohitvyavahare.webservices;
 
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -20,22 +19,18 @@ import org.json.JSONObject;
 
 public class PostOrder extends AsyncTask<Bundle, Void, Bundle> {
 
-    private ProgressDialog progress;
     private static final String TAG = "PostOrder";
 
     private Storage storage;
     private Context c;
 
     public PostOrder(Context c, Storage storage) {
-        progress = new ProgressDialog(c);
         this.c = c;
         this.storage = storage;
     }
 
     @Override
     protected void onPreExecute() {
-        progress.setMessage("Loading");
-        progress.show();
     }
 
     @Override
@@ -46,19 +41,20 @@ public class PostOrder extends AsyncTask<Bundle, Void, Bundle> {
 
             Log.d(TAG, "In background job");
 
-            JSONObject body = new JSONObject(input.getString("body"));
+            final JSONObject body = new JSONObject(input.getString("body"));
             JSONObject from = new JSONObject(body.getString("from"));
 
 
-            Uri uri = new Uri.Builder()
+            final Uri uri = new Uri.Builder()
                     .scheme("https")
                     .encodedAuthority(c.getString(R.string.server_ur_templ))
                     .path(c.getString(R.string.org))
                     .appendPath(from.getString("id"))
-                    .appendPath(c.getString(R.string.order))
+                    .appendPath(this.c.getString(R.string.order))
                     .build();
 
-            output = new Call("POST", uri, storage.getUid(), body.toString(), this.c).Run();
+            output = new Call("POST", uri, storage.getUid(), body.toString(), c).Run();
+
             onPostExecute();
             switch (output.getInt("response")) {
                 case 200: {
@@ -70,6 +66,9 @@ public class PostOrder extends AsyncTask<Bundle, Void, Bundle> {
                     Log.d(TAG, "Paired orgs :" + pairedOrgs.length());
 
                     JSONArray ordersFromPairedOrg = storage.getOrdersTo(input.getString("tag"));
+                    if (ordersFromPairedOrg == null) {
+                        ordersFromPairedOrg = new JSONArray();
+                    }
                     Log.d(TAG, "orders :" + ordersFromPairedOrg.toString());
 
 
@@ -89,6 +88,9 @@ public class PostOrder extends AsyncTask<Bundle, Void, Bundle> {
                     return output;
                 }
                 default: {
+                    if (output.getString("exception") != null ) {
+                        return output;
+                    }
                     output.putString("exception", output.getString("output"));
                     return output;
                 }
@@ -102,6 +104,5 @@ public class PostOrder extends AsyncTask<Bundle, Void, Bundle> {
     }
 
     protected void onPostExecute() {
-        progress.dismiss();
     }
 }

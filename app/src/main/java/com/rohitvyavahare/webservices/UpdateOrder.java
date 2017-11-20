@@ -1,6 +1,5 @@
 package com.rohitvyavahare.webservices;
 
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -8,38 +7,33 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.example.rohitvyavahare.project.R;
+import com.rohitvyavahare.Data.Storage;
+import com.rohitvyavahare.webservices.REST.Call;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 
 /**
  * Created by rohitvyavahare on 6/25/17.
  */
 
 public class UpdateOrder extends AsyncTask<Bundle, Void, Bundle> {
-    private ProgressDialog progress;
     private static final String TAG = "UpdateOrder";
     private String host;
     private String endpoint;
+    private Storage storage;
+    private Context c;
 
 
-    UpdateOrder(Context c) {
-        progress = new ProgressDialog(c);
-        host = c.getString(R.string.server_ur_templ);
+    public UpdateOrder(Context c, Storage storage) {
+        host =  c.getString(R.string.server_ur_templ);
         endpoint = c.getString(R.string.order);
+        this.c = c;
+        this.storage = storage;
     }
 
     @Override
     protected void onPreExecute() {
-        progress.setMessage("Loading");
-        progress.show();
     }
 
     @Override
@@ -48,8 +42,8 @@ public class UpdateOrder extends AsyncTask<Bundle, Void, Bundle> {
         Bundle output = new Bundle();
 
         try {
-            Bundle bundle = params[0];
-            JSONObject b = new JSONObject(bundle.getString("obj"));
+            Bundle input = params[0];
+            JSONObject body = new JSONObject(input.getString("body"));
 
             //TODO add to and from orgs in body
 
@@ -57,129 +51,72 @@ public class UpdateOrder extends AsyncTask<Bundle, Void, Bundle> {
                     .scheme("https")
                     .encodedAuthority(host)
                     .path(endpoint)
-                    .appendPath(b.getString("id"))
-                    .appendQueryParameter("message", bundle.getString("message"))
+                    .appendPath(input.getString("id"))
+                    .appendQueryParameter("message", input.getString("message"))
+                    .appendQueryParameter("edit", input.getString("edit"))
                     .build();
 
 
             //@TODO add band as query parameter
+            Log.d(TAG, "Updating order body :" + body.toString(4));
 
-            URL url = new URL(uri.toString());
-            Log.d(TAG, "url:" + url.toString());
+            output = new Call("PUT", uri, storage.getUid(), body.toString(), this.c).Run();
 
-            String auth = bundle.getString("uid");
+            switch (output.getInt("response")) {
+                case 200: {
+                    JSONObject selectedPairOrg = new JSONObject(input.getString("paired_org"));
+                    output.putString("exception", "no_exception");
+                    JSONArray orders;
 
-            Log.d(TAG, "Auth " + auth);
-            if (auth.equals("null")) {
-                onPostExecute();
-                //@TODO add alert
-            }
+                    if (input.getString("type").equals("inbox")) {
+                        orders = storage.getOrdersFrom(selectedPairOrg.getString("tag"));
+                    } else  {
+                        orders = storage.getOrdersTo(selectedPairOrg.getString("tag"));
+                    }
+                    Log.d(TAG, "Updated order from server : "+ output.getString("output"));
 
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("PUT");
-            connection.setRequestProperty("Content-Type", "application/json");
-            connection.setRequestProperty("Accept", "application/json");
-            connection.setRequestProperty("Authorization", auth);
-            connection.setDoOutput(true);
+                    JSONObject newOrder = new JSONObject(output.getString("output"));
+                    JSONArray newOrders = new JSONArray();
+                    for (int i = 0; i < orders.length(); i++) {
+                        Log.d(TAG, "Matching :" + orders.getJSONObject(i).getString("id") + " with :" + newOrder.getString("id"));
+                        if (orders.getJSONObject(i).has("id") && orders.getJSONObject(i).getString("id").equals(newOrder.getString("id"))) {
+                            newOrders.put(newOrder);
+                        } else {
+                            newOrders.put(orders.getJSONObject(i));
+                        }
+                    }
 
-            JSONObject default_org = new JSONObject(bundle.getString("default_org"));
-            Log.d(TAG, "Default org for order :" + default_org.toString());
+                    Log.d(TAG, "Type :" + input.getString("type"));
 
-            String paired_orgs = bundle.getString("paired_orgs");
-            JSONObject to_org = new JSONObject();
+                    if ( input.getString("type").equals("inbox")) {
+                        storage.setOrdersFrom(selectedPairOrg.getString("tag"), newOrders);
 
-            String type = bundle.getString("type");
-            Log.d(TAG, "Request for type " + type);
+                    } else {
+                        storage.setOrdersTo(selectedPairOrg.getString("tag"), newOrders);
+                    }
 
-            Log.d(TAG, "Paired Orgs :" + paired_orgs);
-            JSONArray paired_arr = new JSONArray(paired_orgs);
 
-            String org_name = bundle.getString("org_name");
-            Log.d(TAG, "Organization name :" + org_name);
-
-            for (int i = 0; i < paired_arr.length(); i++) {
-                if (!paired_arr.getJSONObject(i).has("name")) {
-                    continue;
-                }
-                String paired_org_name =  paired_arr.getJSONObject(i).getString("name");
-
-                if (paired_org_name.equals(org_name)) {
-                    to_org = paired_arr.getJSONObject(i);
-                }
-            }
-
-            if (!to_org.has("id")) {
-                throw new NullPointerException("to_org can't be null");
-            }
-
-            JSONObject body = new JSONObject();
-            body.put("order", b);
-
-            if (type.equals("inbox")) {
-                body.put("to", default_org);
-                body.put("from", to_org);
-                Log.d(TAG, "From org as type is inbox:" + to_org.toString());
-            } else {
-                body.put("to", to_org);
-                body.put("from", default_org);
-                Log.d(TAG, "To org as type is outbox:" + to_org.toString());
-            }
-
-            DataOutputStream dStream = new DataOutputStream(connection.getOutputStream());
-            dStream.writeBytes(body.toString());
-            dStream.flush();
-            dStream.close();
-            int response = connection.getResponseCode();
-
-            Log.d(TAG, "Sending 'PUT' request to URL : :" + url);
-            Log.d(TAG, "PUT parameters : " + body.toString());
-            Log.d(TAG, "Response Code : " + response);
-
-            StringBuilder sb = new StringBuilder();
-            String line;
-            BufferedReader br;
-
-            try {
-                br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            } catch (IOException ioe) {
-                br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
-            }
-
-            while ((line = br.readLine()) != null) {
-                sb.append(line);
-                sb.append("\n");
-            }
-            br.close();
-
-            onPostExecute();
-
-            Log.d(TAG, "Response :" + sb.toString());
-
-            output.putInt("response", response);
-            output.putString("output", sb.toString());
-            try {
-                Log.d(TAG, "Checking if exception exist");
-                String temp = output.getString("exception");
-                if (!temp.equals("no_exception")) {
-                    output.putString("exception", temp);
-                    Log.d(TAG, "Exception exist");
+                    onPostExecute();
                     return output;
                 }
-
-            } catch (NullPointerException e) {
-                e.printStackTrace();
+                default: {
+                    if (output.getString("exception") != null ) {
+                        return output;
+                    }
+                    output.putString("exception", output.getString("output"));
+                    onPostExecute();
+                    return output;
+                }
             }
-            output.putString("exception", "no_exception");
-            return output;
         } catch (Exception e) {
             e.printStackTrace();
             onPostExecute();
             output.putString("exception", e.getMessage());
+            onPostExecute();
             return output;
         }
     }
 
     private void onPostExecute() {
-        progress.dismiss();
     }
 }

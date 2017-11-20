@@ -189,16 +189,16 @@ public class MessagingService extends FirebaseMessagingService {
                         editor.putInt(object.getString("id") + obj.getString("type") + getString(R.string.number_of_notification), no);
                     }
 
-                    String orgs_string = prefs.getString("orgs", "null");
-                    Log.d(TAG, "orgs_string :" + orgs_string);
-
-                    if (orgs_string.equals("null")) {
-                        Log.d(TAG, "orgs_string null");
-                        break;
-                    }
-
-                    JSONArray orgs = new JSONArray(orgs_string);
-                    Log.d(TAG, "orgs :" + orgs.toString());
+//                    String orgs_string = prefs.getString("orgs", "null");
+//                    Log.d(TAG, "orgs_string :" + orgs_string);
+//
+//                    if (orgs_string.equals("null")) {
+//                        Log.d(TAG, "orgs_string null");
+//                        break;
+//                    }
+//
+//                    JSONArray orgs = new JSONArray(orgs_string);
+//                    Log.d(TAG, "orgs :" + orgs.toString());
                     Log.d(TAG, "Type :" + obj.getString("type"));
                     Order order = new Order(this, storage);
 
@@ -297,52 +297,59 @@ public class MessagingService extends FirebaseMessagingService {
 
                 case 6: {
 
-                    Log.d(TAG, "paired orgs");
+                    try {
+                        Log.d(TAG, "paired orgs");
 
-                    intent = new Intent(this, InboxActivity.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-
-                    JSONObject newOrg = new JSONObject(obj.getString("value"));
-                    String paired_orgs = prefs.getString(obj.getString("org_tag") + getString(R.string.paired_orgs), "null");
-                    JSONArray arr;
-
-                    if (paired_orgs.equals("null")) {
-                        Log.d(TAG, "Creating new array for paired org");
-                        arr = new JSONArray();
-                    } else {
-                        Log.d(TAG, "Existing array for paired org");
-                        arr = new JSONArray(paired_orgs);
-                        for (int i = 0; i < arr.length(); i++) {
-                            JSONObject temp = arr.getJSONObject(i);
-
-                            if (!(newOrg.has("id") && temp.has("id") && newOrg.getString("id").equals(temp.getString("id")))) {
-                                continue;
-                            }
-
-                            break;
-                        }
-                    }
-
-                    Log.d(TAG, "Adding paired org  :" + obj.getString("value"));
-                    JSONObject object = new JSONObject(obj.getString("value"));
-                    arr.put(object);
-                    editor.putString(obj.getString("org_tag") + getString(R.string.paired_orgs), arr.toString());
-                    editor.commit();
-
-                    if (dorg.has("type") && dorg.getString("type").equals("null")) {
-                        break;
-
-                    }
-
-                    if (obj.has("org_tag") && dorg.has("tag") && !obj.getString("org_tag").equals(dorg.getString("tag"))) {
-                        String msg = getString(R.string.differnet_org_notification_msg);
-                        msg += " " + obj.getString("org_name") + " from settings";
-                        Bundle data = new Bundle();
-                        data.putString("message", msg);
                         intent = new Intent(this, InboxActivity.class);
-                        intent.putExtras(data);
                         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+                        JSONObject newOrg = new JSONObject(obj.getString("value"));
+                        JSONArray pairedOrgs = storage.getPairedOrgs(defaultOrg.getString("tag"));
+                        int i = 0;
+                        Log.d(TAG, "Number of Paired Orgs before:" + pairedOrgs.length());
+                        if(pairedOrgs == null){
+                            Log.d(TAG, "Creating new array for paired org");
+                            pairedOrgs = new JSONArray();
+                        } else {
+                            Log.d(TAG, "Existing array for paired org");
+                            for (; i < pairedOrgs.length(); i++) {
+                                JSONObject currentPairOrgInConsideration = pairedOrgs.getJSONObject(i);
+
+                                if (!(newOrg.has("id") && currentPairOrgInConsideration.has("id") &&
+                                        newOrg.getString("id").equals(currentPairOrgInConsideration.getString("id")))) {
+                                    continue;
+                                }
+
+                                break;
+                            }
+                        }
+
+                        if ( i == pairedOrgs.length() )
+                            pairedOrgs.put(newOrg);
+                        Log.d(TAG, "Number of Paired Orgs after:" + pairedOrgs.length());
+                        Log.d(TAG, "Newly Added Paird org :" + newOrg.toString(4));
+                        storage.setPairedOrgs(defaultOrg.getString("tag"), pairedOrgs);
+
+                        if (dorg.has("type") && dorg.getString("type").equals("null")) {
+                            break;
+
+                        }
+
+                        if (obj.has("org_tag") && dorg.has("tag") && !obj.getString("org_tag").equals(dorg.getString("tag"))) {
+                            String msg = getString(R.string.differnet_org_notification_msg);
+                            msg += " " + obj.getString("org_name") + " from settings";
+                            Bundle data = new Bundle();
+                            data.putString("message", msg);
+                            intent = new Intent(this, PairOrgActivity.class);
+                            intent.putExtras(data);
+                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        }
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
+
+
                 }
 
                 case 7: {
@@ -393,8 +400,6 @@ public class MessagingService extends FirebaseMessagingService {
                     showNotification = false;
                     break;
                 }
-
-
             }
 
 
@@ -437,15 +442,15 @@ public class MessagingService extends FirebaseMessagingService {
                             .setAutoCancel(true)
                             .setSound(defaultSoundUri)
                             .setContentIntent(pendingIntent);
-
                 }
 
 
                 NotificationManager notificationManager =
                         (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
-                int Unique_Integer_Number = (int) ((new Date().getTime() / 1000L) % Integer.MAX_VALUE);
-                notificationManager.notify(Unique_Integer_Number, notificationBuilder.build());
+                int UniqueIntegerNumber = (int) ((new Date().getTime() / 1000L) % Integer.MAX_VALUE);
+                Log.d(TAG, "Notifying with Number :" + UniqueIntegerNumber);
+                notificationManager.notify(UniqueIntegerNumber, notificationBuilder.build());
             }
 
         } catch (JSONException e) {

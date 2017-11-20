@@ -36,17 +36,17 @@ public class FirebaseToken extends FirebaseInstanceIdService {
             Log.d(TAG, "Refreshed token: " + refreshedToken);
 
             String auth = prefs.getString("uid", "null");
+            Storage storage = new Storage(this);
 
             Log.d(TAG, "auth " + auth);
             editor = prefs.edit();
-            if (!auth.equals("null")) {
+            if ( auth == null || auth.equals("null")) {
                 editor.putString("refreshToken", refreshedToken);
-                editor.putString("first_token", "false");
+                Log.d(TAG, "Setting first token to true");
+                storage.setFirstToken("true");
             }
             else {
                 editor.putString("refreshToken", refreshedToken);
-                editor.putString("first_token", "true");
-                Storage storage = new Storage(this);
                 handleToken(refreshedToken, storage, this, auth);
             }
             editor.apply();

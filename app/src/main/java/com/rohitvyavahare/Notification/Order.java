@@ -82,7 +82,9 @@ public class Order {
 
             JSONArray orders = storage.getOrdersFrom(pairedOrg.getString("tag"));
 
-            Log.d(TAG, "Stored orders " + orders.toString());
+            if (orders != null) {
+                Log.d(TAG, "Stored orders " + orders.toString());
+            }
 
             int i = 0;
             if (orders == null || orders.length() == 0) {
@@ -151,7 +153,10 @@ public class Order {
             String _type = input.getString("type");
 
             JSONArray orgs = storage.getAssociatedOrgs();
-            Log.d(TAG, "orgs :" + orgs.toString());
+
+            if (orgs != null) {
+                Log.d(TAG, "orgs :" + orgs.toString());
+            }
             Log.d(TAG, "Type :" + input.getString("type"));
 
             if (orgs == null || orgs.length() == 0) {

@@ -94,6 +94,7 @@ public class GetOrgs extends AsyncTask<Bundle, Void, Bundle> {
                                 orgName = orgs.getJSONObject(0).getString("name");
                             }
                             this.storage.setDefaultOrg(orgs.getJSONObject(0).toString());
+                            this.storage.setLastSyncTime(orgs.getJSONObject(0).getString("tag"));
                         }
                         output.putString("current_org_name", orgName);
                         output.putBoolean("empty_view", false);

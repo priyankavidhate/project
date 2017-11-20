@@ -62,7 +62,7 @@
 
     <!-- server endpoints -->
     <!--project-backend.mybluemix.net-->
-    <!--192.168.0.101:5001-->
+    <!--192.168.0.104:5001-->
     <string name="server_url">https://project-backend-2.mybluemix.net</string>
     <string name="server_ur_templ">project-backend.mybluemix.net</string>
     <string name="account">/account</string>

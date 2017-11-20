@@ -84,17 +84,17 @@
                         android:textColor="@color/white"
                         android:textSize="12sp" />
                 </LinearLayout>
-                <android.support.design.widget.FloatingActionButton
-                    android:id="@+id/editOrder"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="16dp"
-                    android:clickable="true"
-                    android:src="@drawable/ic_mode_edit_black_24dp"
-                    android:tint="@color/white"
-                    app:backgroundTint="#fe6224"
-                    app:layout_anchor="@id/viewA"
-                    app:layout_anchorGravity="bottom|right|end" />
+                <!--<android.support.design.widget.FloatingActionButton-->
+                    <!--android:id="@+id/editOrder"-->
+                    <!--android:layout_width="wrap_content"-->
+                    <!--android:layout_height="wrap_content"-->
+                    <!--android:layout_margin="16dp"-->
+                    <!--android:clickable="true"-->
+                    <!--android:src="@drawable/ic_mode_edit_black_24dp"-->
+                    <!--android:tint="@color/white"-->
+                    <!--app:backgroundTint="#fe6224"-->
+                    <!--app:layout_anchor="@id/viewA"-->
+                    <!--app:layout_anchorGravity="bottom|right|end" />-->
             </LinearLayout>
         </LinearLayout>
 
@@ -341,5 +341,17 @@
         </LinearLayout>
 
     </LinearLayout>
+
+    <android.support.design.widget.FloatingActionButton
+    android:id="@+id/editOrder"
+    android:layout_width="45sp"
+    android:layout_height="45sp"
+    android:layout_margin="10dp"
+    android:clickable="true"
+    android:src="@drawable/ic_mode_edit_black_24dp"
+    android:tint="@color/white"
+    app:backgroundTint="#fe6224"
+    app:layout_anchor="@id/viewA"
+    app:layout_anchorGravity="bottom|right|end" />
 
 </android.support.design.widget.CoordinatorLayout>

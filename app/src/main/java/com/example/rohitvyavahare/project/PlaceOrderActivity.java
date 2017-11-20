@@ -1,9 +1,13 @@
 package com.example.rohitvyavahare.project;
 
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.TypedArray;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -29,6 +33,7 @@ import com.rohitvyavahare.extensions.Adapter.DataAdapter;
 import com.rohitvyavahare.extensions.Spinner.NothingSelectedSpinnerAdapter;
 import com.rohitvyavahare.webservices.GetOrgItems;
 import com.rohitvyavahare.webservices.PostOrder;
+import com.rohitvyavahare.webservices.UpdateOrder;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -47,8 +52,9 @@ public class PlaceOrderActivity extends AppCompatActivity
 
     private static final String TAG = "PlaceOrderActivity";
     private HashMap<String, Integer> nameToid;
+    private HashMap<String, Integer> tagToid;
     final int[] result = new int[1];
-    private int count = 0;
+    private int count = 1;
     private Storage storage;
     JSONObject defaultOrg;
     JSONArray pairedOrgs;
@@ -56,6 +62,12 @@ public class PlaceOrderActivity extends AppCompatActivity
     private String[] itemList;
     private ArrayList<String> pairedOrgsNames;
     private Map<Integer, String> dropDownMap = new HashMap<>();
+    private Bundle bundle;
+    private Map<String, Integer> itemToPosition = new HashMap<>();
+    TypedArray t2;
+    TypedArray t;
+    boolean editOrder = false;
+    ProgressDialog pd;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,6 +90,11 @@ public class PlaceOrderActivity extends AppCompatActivity
                 e.printStackTrace();
             }
 
+            t2 = getResources().obtainTypedArray(R.array.quantityIds);
+            t = getResources().obtainTypedArray(R.array.itemIds);
+            pd = new ProgressDialog(PlaceOrderActivity.this);
+            pd.setMessage("Loading...");
+
             // get bundle and check if it is edit order
 
             defaultOrg = storage.getDefaultOrg();
@@ -98,20 +115,18 @@ public class PlaceOrderActivity extends AppCompatActivity
             }
             switcher = (ViewSwitcher) findViewById(R.id.my_switcher_3);
             switcher.showNext();
-//            createTable();
-
-//            findViewById(R.id.addMore).setOnClickListener(PlaceOrderActivity.this);
-//            findViewById(R.id.PlaceOrder).setOnClickListener(PlaceOrderActivity.this);
-//            findViewById(R.id.removeItem).setOnClickListener(PlaceOrderActivity.this);
 
             pairedOrgsNames = new ArrayList<>();
             nameToid = new HashMap<>();
+            tagToid = new HashMap<>();
             for (int i = 0; i < pairedOrgs.length(); i++) {
 
                 JSONObject obj = pairedOrgs.getJSONObject(i);
-                if (obj.has("name")) {
+
+                if (obj.has("name") && obj.has("tag")) {
                     pairedOrgsNames.add(obj.getString("name"));
                     nameToid.put(obj.getString("name"), i);
+                    tagToid.put(obj.getString("tag"), i);
                 }
             }
 
@@ -124,9 +139,17 @@ public class PlaceOrderActivity extends AppCompatActivity
             pairedOrgsNames.clear();
             pairedOrgsNames.addAll(hs);
 
+            bundle = getIntent().getExtras();
+
+            if (bundle != null && bundle.containsKey("orderBundle")) {
+                setTitle("Edit an order");
+                editOrder = true;
+                handleEditOrder();
+                return;
+            }
+
 
             final CharSequence orgNames[] = pairedOrgsNames.toArray(new String[0]);
-//            final TextView orgName = (TextView) findViewById(R.id.OrgName);
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
                 @Override
@@ -141,9 +164,7 @@ public class PlaceOrderActivity extends AppCompatActivity
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     result[0] = which;
-//                    String selected_org = orgNames[which].toString();
-//                    orgName.setText("Order to Organization : " + selected_org);
-                    createTable();
+                    createTable("", "");
                 }
             });
             builder.setCancelable(false);
@@ -162,16 +183,18 @@ public class PlaceOrderActivity extends AppCompatActivity
         orgName.setText("Order to Organization : " + selected_org);
     }
 
-
     // add items into spinner dynamically
     public void addItemsOnSpinner(final Spinner spinner, final int position) {
         try {
             TextView orgName = (TextView) findViewById(R.id.OrgName);
-            selectedPairOrg = pairedOrgs.getJSONObject(nameToid.get(orgName.getText().toString().split("Order to Organization : ")[1]));
+            if(selectedPairOrg == null) {
+                selectedPairOrg = pairedOrgs.getJSONObject(nameToid.get(orgName.getText().toString().split("Order to Organization : ")[1]));
+            }
 
             final List<String> list = new ArrayList<String>();
             final List<Data> dList = new ArrayList<>();
             Log.d(TAG, "Item list length :" + itemList.length);
+            int i = 0;
             for (String item : itemList) {
                 Log.d(TAG, "Adding Item :" + item);
                 list.add(item);
@@ -182,32 +205,17 @@ public class PlaceOrderActivity extends AppCompatActivity
                     out[0] = temp[0];
                 }
 
-                if(temp.length >= 1) {
+                if(temp.length >= 2) {
                     out[1] = temp[1];
                 }
 
-                if(temp.length >=2) {
+                if(temp.length >=3) {
                     out[1] += " " + temp[2];
                 }
                 dList.add(new Data(out[0], out[1]));
+                itemToPosition.put(item, i);
+                i++;
             }
-
-//            for(int i=0; i<10; i++) {
-//                dList.add(new Data("test", "abcd", "efgh"));
-//            }
-
-//            ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
-//                    android.R.layout.simple_spinner_item, list);
-//            dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-//
-//            spinner.setAdapter(dataAdapter);
-//
-//            spinner.setAdapter(
-//                    new NothingSelectedSpinnerAdapter(
-//                            dataAdapter,
-//                            R.layout.contact_spinner_row_nothing_selected,
-//                            // R.layout.contact_spinner_nothing_selected_dropdown, // Optional
-//                            this));
             spinner.setAdapter(
                     new NothingSelectedSpinnerAdapter(
                             new DataAdapter(this, dList),
@@ -218,7 +226,7 @@ public class PlaceOrderActivity extends AppCompatActivity
             spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 
                 public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-                    Log.d(TAG, "Pos :" + pos);
+                    Log.d(TAG, "onItemSelected Pos :" + pos);
                     if (pos > 0) {
                         Log.d(TAG, "Adding to dropDownMap key " + position + " and value " + list.get(pos - 1));
                         dropDownMap.put(position, list.get(pos - 1));
@@ -240,8 +248,6 @@ public class PlaceOrderActivity extends AppCompatActivity
     public void onClick(View v) {
         try {
             Log.d(TAG, "Something clicked");
-            TypedArray t2 = getResources().obtainTypedArray(R.array.quantityIds);
-            TypedArray t = getResources().obtainTypedArray(R.array.itemIds);
 
             int i = v.getId();
             if (i == R.id.PlaceOrder) {
@@ -250,7 +256,13 @@ public class PlaceOrderActivity extends AppCompatActivity
                     Log.d(TAG, "Failed to validate shipment");
                     return;
                 }
-                createOrder();
+                if(editOrder) {
+                    updateOrder();
+                } else {
+                    createOrder();
+                }
+                t2.recycle();
+                t.recycle();
             } else if (i == addMore) {
                 addItem(t, t2);
             } else if (i == R.id.removeItem) {
@@ -276,7 +288,7 @@ public class PlaceOrderActivity extends AppCompatActivity
             JSONArray orderArr;
 
             if (itemList == null || itemList.length == 0) {
-                orderArr = createOrderWithoutOrgItmes();
+                orderArr = createOrderWithoutOrgItems();
             } else {
                 orderArr = createOrderWithOrgItems();
             }
@@ -330,8 +342,6 @@ public class PlaceOrderActivity extends AppCompatActivity
         JSONArray orderArr = new JSONArray();
         JSONObject order;
 
-        TypedArray t2 = getResources().obtainTypedArray(R.array.quantityIds);
-
         EditText editQty;
         int j = 0;
         for (Map.Entry<Integer, String> entry : dropDownMap.entrySet()) {
@@ -356,37 +366,23 @@ public class PlaceOrderActivity extends AppCompatActivity
                 order.put("hsnCode", orderValues.getString("hsnCode"));
             }
 
-            if (key == 0) {
-
-                editQty = (EditText) findViewById(R.id.editQuantity);
-                order.put("quantity", editQty.getText().toString().trim());
-                orderArr.put(order);
-                continue;
-            }
-
             editQty = (EditText) findViewById(t2.getResourceId(j, 0));
             order.put("quantity", editQty.getText().toString().trim());
             orderArr.put(order);
             j++;
 
         }
-        t2.recycle();
         return orderArr;
     }
 
-    private JSONArray createOrderWithoutOrgItmes() throws Exception {
+    @SuppressWarnings("ResourceType")
+    private JSONArray createOrderWithoutOrgItems() throws Exception {
         JSONArray orderArr = new JSONArray();
-        JSONObject order = new JSONObject();
+        JSONObject order;
 
-        TypedArray t = getResources().obtainTypedArray(R.array.itemIds);
-        TypedArray t2 = getResources().obtainTypedArray(R.array.quantityIds);
+        EditText editItem;
+        EditText editQty;
 
-        EditText editItem = (EditText) findViewById(R.id.editItem);
-        EditText editQty = (EditText) findViewById(R.id.editQuantity);
-
-        order.put("item", editItem.getText().toString().trim());
-        order.put("quantity", editQty.getText().toString().trim());
-        orderArr.put(order);
         for (int j = 0; j < count; j++) {
             order = new JSONObject();
             editItem = (EditText) findViewById(t.getResourceId(j, 0));
@@ -395,8 +391,6 @@ public class PlaceOrderActivity extends AppCompatActivity
             order.put("quantity", editQty.getText().toString().trim());
             orderArr.put(order);
         }
-        t.recycle();
-        t2.recycle();
         return orderArr;
     }
 
@@ -418,20 +412,116 @@ public class PlaceOrderActivity extends AppCompatActivity
         return orderValues;
     }
 
+    @SuppressWarnings("ResourceType")
     private void handleEditOrder() {
         try {
 
-            // @TODO check is it customer or owner
-            //
+            Log.d(TAG, "Handle Edit Order");
+
+            for (String key: bundle.keySet())
+            {
+                Log.d (TAG, key + " is a key in the bundle");
+            }
+
+            bundle = (Bundle) bundle.get("orderBundle");
+
+            JSONObject obj = new JSONObject(bundle.get("order_details").toString());
+            Log.d(TAG, "Order details :" + obj.toString());
+
+            String type = bundle.getString("type");
+
+            String orgTag = bundle.getString("org_tag");
+
+            Log.d(TAG, "Calling Create Table");
+
+
+            if (type.equals("inbox")) {
+                createTable(this.storage.getDefaultOrg().getString("tag"), this.storage.getDefaultOrg().getString("id") );
+            } else {
+                Log.d(TAG, "To :" + orgTag);
+                selectedPairOrg = pairedOrgs.getJSONObject(tagToid.get(orgTag));
+                if (!selectedPairOrg.has("tag")) {
+                    return;
+                }
+                Log.d(TAG, "Selected Pair Org :" + selectedPairOrg.getString("tag"));
+                createTable(selectedPairOrg.getString("tag"), selectedPairOrg.getString("id"));
+            }
+
+
+            Log.d(TAG, "Done Create Table");
+
+
+            final TextView orgName = (TextView) findViewById(R.id.OrgName);
+            if (obj.has("order_id")) {
+                orgName.setText("Edit Order: " + obj.getString("order_id"));
+            } else {
+                orgName.setText("Edit Order");
+            }
+
+            JSONArray shipment = obj.getJSONArray("shipment");
+
+            String orderType;
+
+            if (itemList == null || itemList.length == 0) {
+                orderType = "edittxt";
+            } else {
+                orderType = "spinner";
+            }
+
+            Log.d(TAG, "Order Type: "+ orderType);
+
+            for (int i=0; i<shipment.length(); i++) {
+
+                if( i != 0) {
+                    addItem(t,t2);
+                }
+                StringBuilder itemBrandCode = new StringBuilder();
+                JSONObject currentShipment = shipment.getJSONObject(i);
+                try {
+                    Log.d(TAG, "Shipment in consideration :"+ currentShipment.toString());
+                    if (currentShipment.has("item")) {
+                        itemBrandCode.append(currentShipment.getString("item"));
+                        itemBrandCode.append(" ");
+                    }
+
+                    if (currentShipment.has("brand")) {
+                        itemBrandCode.append(currentShipment.getString("brand"));
+                        itemBrandCode.append(" ");
+                    }
+
+                    if (currentShipment.has("hsnCode")) {
+                        itemBrandCode.append(currentShipment.getString("hsnCode"));
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    continue;
+                }
+
+                Log.d(TAG, "Looking for :" + itemBrandCode.toString().trim().length());
+
+                if(orderType.equals("spinner")) {
+                    Spinner item = (Spinner) findViewById(t.getResourceId(i, 0));
+
+                    item.setSelection(itemToPosition.get(itemBrandCode.toString().trim()) + 1);
+                } else {
+                    EditText item = (EditText) findViewById(t.getResourceId(i, 0));
+                    item.setText(currentShipment.getString("item"));
+                }
+                EditText quantity = (EditText) findViewById(t2.getResourceId(i, 0));
+                if (currentShipment.has("quantity")) {
+                    quantity.setVisibility(View.VISIBLE);
+                    quantity.setText(currentShipment.getString("quantity"));
+                }
+            }
 
         } catch (Exception e) {
+            e.printStackTrace();
+            showMessageOnUi(e.getMessage());
 
         }
     }
 
     private boolean validateShipment() {
-        TypedArray t = getResources().obtainTypedArray(R.array.itemIds);
-        TypedArray t2 = getResources().obtainTypedArray(R.array.quantityIds);
 
         String type;
         if (itemList == null || itemList.length == 0) {
@@ -441,49 +531,31 @@ public class PlaceOrderActivity extends AppCompatActivity
         }
 
         Log.d(TAG, "Type is :" + type);
-
-        EditText editQty = (EditText) findViewById(R.id.editQuantity);
-
-        if (editQty.getText().toString().trim().equals("")) {
-            Log.d(TAG, "Edit Qunatity is empty :" + editQty.getText().toString());
-            editQty.setError("Quantity is required");
-            return false;
-        }
+        EditText editQty;
 
 
         if (type.equals("spinner")) {
 
-            if (dropDownMap == null || !dropDownMap.containsKey(0)) {
-                Log.d(TAG, "Spinner is empty at position :" + 0);
-                showMessageOnUi("Item name is required at position " + "" + (0 + 1));
-                return false;
-            }
-
 
             for (int i = 0; i < count; i++) {
                 Log.d(TAG, "Validating Spinner at position :" + i);
-                if (dropDownMap == null || !dropDownMap.containsKey(i + 1)) {
+                if (dropDownMap == null || !dropDownMap.containsKey(i)) {
                     Log.d(TAG, "Spinner is empty at position :" + i);
-                    showMessageOnUi("Item name is required at position " + "" + (i + 1));
+                    showMessageOnUi("Item name is required at position " + "" + (i+1));
                     return false;
                 }
 
                 editQty = (EditText) findViewById(t2.getResourceId(i, 0));
-                Log.d(TAG, "Validating Edit qunatity at position :" + i);
+                Log.d(TAG, "Validating Edit quantity at position :" + i);
                 if (editQty.getText().toString().trim().equals("")) {
-                    Log.d(TAG, "Edit Qunatity is empty :" + editQty.getText().toString());
+                    Log.d(TAG, "Edit Quantity is empty :" + editQty.getText().toString());
                     editQty.setError("Quantity is required");
                     return false;
                 }
             }
 
         } else {
-
-            EditText editItem = (EditText) findViewById(R.id.editItem);
-            if (editItem.getText().toString().trim().equals("")) {
-                editItem.setError("Item name is required");
-                return false;
-            }
+            EditText editItem;
 
             for (int i = 0; i < count; i++) {
 
@@ -504,18 +576,16 @@ public class PlaceOrderActivity extends AppCompatActivity
                 }
             }
         }
-
-        t.recycle();
-        t2.recycle();
         return true;
     }
 
+    @SuppressWarnings("ResourceType")
     private void addItem(TypedArray t, TypedArray t2) {
 
         if (count >= t.length()) {
             return;
         }
-        if (count == 0) {
+        if (count == 1) {
             TextView txView = (TextView) findViewById(R.id.removeItem);
             txView.setVisibility(View.VISIBLE);
         }
@@ -527,8 +597,6 @@ public class PlaceOrderActivity extends AppCompatActivity
         item = findViewById(t2.getResourceId(count, 0));
         item.setVisibility(View.VISIBLE);
         count++;
-        t.recycle();
-        t2.recycle();
     }
 
     private void removeItem(TypedArray t, TypedArray t2) {
@@ -551,25 +619,55 @@ public class PlaceOrderActivity extends AppCompatActivity
             TextView txView = (TextView) findViewById(R.id.removeItem);
             txView.setVisibility(View.GONE);
         }
-        t.recycle();
-        t2.recycle();
+//        t.recycle();
+//        t2.recycle();
     }
 
-    private void handlePostOrder(Bundle input) {
-        try {
-            Bundle output = new PostOrder(this, storage).execute(input).get();
+    private void handlePostOrder(final Bundle input) {
 
-            if (!output.getString("exception").equals("no_exception")) {
-                showAlertBox("Error", output.getString("exception"));
-                return;
+        final Storage s = storage;
+        final Context c = this;
+        pd.show();
+
+        //start a new thread to process job
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Message msg = new Message();
+                try {
+                    Bundle output = new PostOrder(c, s).execute(input).get();
+
+                    if (!output.getString("exception").equals("no_exception")) {
+                        output.putString("first_msg", "Error");
+                        output.putString("second_msg", output.getString("exception"));
+                    } else {
+                        JSONObject newOrder = new JSONObject(output.getString("output"));
+                        output.putString("first_msg", "Success");
+                        output.putString("second_msg", "Order Id: " + newOrder.getString("order_id"));
+                    }
+                    msg.setData(output);
+                    handler.sendMessage(msg);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    input.putString("first_msg", e.getMessage());
+                    input.putString("second_msg", "null");
+                    msg.setData(input);
+                    handler.sendMessage(msg);
+                }
             }
-            JSONObject newOrder = new JSONObject(output.getString("output"));
-            showAlertBox("Success", "Order Id: " + newOrder.getString("order_id"));
-        } catch (Exception e) {
-            e.printStackTrace();
-            showMessageOnUi(e.getMessage());
-        }
+        }).start();
     }
+    Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            pd.dismiss();
+            if (msg.getData().getString("second_msg").equals("null")) {
+                showMessageOnUi(msg.getData().getString("first_msg"));
+            } else {
+                showAlertBox(msg.getData().getString("first_msg"), msg.getData().getString("second_msg"));
+            }
+        }
+    };
 
     private void showAlertBox(String titleMsg, String subjectMsg) {
         try {
@@ -581,6 +679,8 @@ public class PlaceOrderActivity extends AppCompatActivity
                     new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
                             dialog.cancel();
+                            Intent intent = new Intent(PlaceOrderActivity.this, InboxActivity.class);
+                            startActivity(intent);
                         }
                     });
 
@@ -592,27 +692,38 @@ public class PlaceOrderActivity extends AppCompatActivity
         }
     }
 
-    private String[] getItems() {
+    private String[] getItems(String tag, String id) {
         try {
 
-            CharSequence orgNames[] = pairedOrgsNames.toArray(new String[0]);
-            String selectedOrg = orgNames[result[0]].toString();
-            selectedPairOrg = pairedOrgs.getJSONObject(nameToid.get(selectedOrg));
-            if (!selectedPairOrg.has("tag")) {
-                return null;
+            Log.d(TAG, "Get Items :"+tag+" "+id);
+
+            if (tag.length() == 0 && id.length() == 0) {
+                CharSequence orgNames[] = pairedOrgsNames.toArray(new String[0]);
+                String selectedOrg = orgNames[result[0]].toString();
+                selectedPairOrg = pairedOrgs.getJSONObject(nameToid.get(selectedOrg));
+                if (!selectedPairOrg.has("tag")) {
+                    return null;
+                }
+                id = selectedPairOrg.getString("id");
+                tag = selectedPairOrg.getString("tag");
             }
 
-            Long lastCheckedTime = storage.getLastPairedOrgsTime(selectedPairOrg.getString("tag"));
+            Long lastCheckedTime = storage.getLastSyncTime(tag);
             JSONArray itemArr;
 
-            if (lastCheckedTime != 0L && lastCheckedTime < (86400000 * 15)) {
-                itemArr = storage.getOrgItmes(selectedPairOrg.getString("tag"));
+            Log.d(TAG, "Last checked time for get items :" + lastCheckedTime);
+            Long diff = lastCheckedTime - System.currentTimeMillis();
+
+            if (lastCheckedTime != 0L && diff < (86400000 * 5)) {
+                Log.d(TAG, "Getting org Items from storage :" + tag);
+                itemArr = storage.getOrgItems(tag);
 
             } else {
+                Log.d(TAG, "Getting org Items from backend :" + tag);
 
                 Bundle input = new Bundle();
-                input.putString("id", selectedPairOrg.getString("id"));
-                input.putString("tag", selectedPairOrg.getString("tag"));
+                input.putString("id", id);
+                input.putString("tag", tag);
 
                 Bundle output = new GetOrgItems(this, storage)
                         .execute(input).get();
@@ -622,12 +733,14 @@ public class PlaceOrderActivity extends AppCompatActivity
                     return null;
                 }
 
-                itemArr = storage.getOrgItmes(selectedPairOrg.getString("tag"));
+                itemArr = storage.getOrgItems(tag);
             }
 
             if (itemArr == null || itemArr.length() == 0) {
                 return null;
             }
+
+            Log.d(TAG, "Items Array :"+ itemArr.toString());
 
             String[] outputArr = new String[itemArr.length()];
 
@@ -655,7 +768,6 @@ public class PlaceOrderActivity extends AppCompatActivity
 
     }
 
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -673,16 +785,22 @@ public class PlaceOrderActivity extends AppCompatActivity
 
             @Override
             public void run() {
-                Toast.makeText(PlaceOrderActivity.this, message, Toast.LENGTH_SHORT).show();
+                if (message.length() > 50) {
+                    Toast.makeText(PlaceOrderActivity.this, message.substring(0,50), Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(PlaceOrderActivity.this, message, Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
 
-    private void createTable() {
+    @SuppressWarnings("ResourceType")
+    private void createTable(String tag, String id) {
 
         String type;
         Spinner spinner = null;
-        getItems();
+        getItems(tag, id);
+        Spinner[] spinners = new Spinner[t.length()];
 
         if (itemList == null || itemList.length == 0) {
             type = "edittxt";
@@ -746,13 +864,14 @@ public class PlaceOrderActivity extends AppCompatActivity
 
         if (type.equals("spinner")) {
             spinner = new Spinner(this);
-            spinner.setId(R.id.editItem);
+            spinner.setId(t.getResourceId(0, 0));
             spinner.setLayoutParams(tlp);
             spinner.setPrompt("Item, brand and HSN Code (Optional)");
             tr2.addView(spinner);
+            spinners[0] = spinner;
         } else {
             editItem = new EditText(this);
-            editItem.setId(R.id.editItem);
+            editItem.setId(t.getResourceId(0, 0));
             editItem.setLayoutParams(tlp);
             editItem.setHint(getString(R.string.item));
             editItem.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
@@ -760,7 +879,7 @@ public class PlaceOrderActivity extends AppCompatActivity
         }
 
         editQuantity = new EditText(this);
-        editQuantity.setId(R.id.editQuantity);
+        editQuantity.setId(t2.getResourceId(0, 0));
         editQuantity.setLayoutParams(tlp);
         editQuantity.setHint(getString(R.string.quantity));
         editQuantity.setInputType(InputType.TYPE_CLASS_TEXT);
@@ -795,12 +914,9 @@ public class PlaceOrderActivity extends AppCompatActivity
         tr1.addView(orgName);
         tr3.addView(editQuantity);
 
-        TypedArray t = getResources().obtainTypedArray(R.array.itemIds);
-        TypedArray t2 = getResources().obtainTypedArray(R.array.quantityIds);
         ArrayList<TableRow> rows = new ArrayList<>();
-        Spinner[] spinners = new Spinner[t.length()];
-        for (int i = 0; i < t.length(); i++) {
-            Log.d(TAG, "Adding item :" + t.getResourceId(i, 0));
+        for (int i = 1; i < t.length(); i++) {
+            Log.d(TAG, "Adding item box:" +i);
 
             View v;
 
@@ -811,7 +927,7 @@ public class PlaceOrderActivity extends AppCompatActivity
                 v = addEditText(t.getResourceId(i, 0), tlp);
             }
 
-            Log.d(TAG, "Adding qunatiy :" + t2.getResourceId(i, 0));
+            Log.d(TAG, "Adding qunatity textbox:" + i);
             EditText editQuantity2 = new EditText(this);
             editQuantity2.setId(t2.getResourceId(i, 0));
             editQuantity2.setLayoutParams(tlp);
@@ -830,8 +946,6 @@ public class PlaceOrderActivity extends AppCompatActivity
             tr3a.addView(editQuantity2);
             rows.add(tr3a);
         }
-        t.recycle();
-        t2.recycle();
 
         tr4.addView(addMore);
         tr5.addView(removeItem);
@@ -858,8 +972,6 @@ public class PlaceOrderActivity extends AppCompatActivity
         addOrgName();
         if (type.equals("spinner") && spinner != null) {
             int i = 0;
-            addItemsOnSpinner(spinner, i);
-            i++;
             for (Spinner s : spinners) {
                 addItemsOnSpinner(s, i);
                 i++;
@@ -887,4 +999,123 @@ public class PlaceOrderActivity extends AppCompatActivity
         spinner.setVisibility(View.GONE);
         return spinner;
     }
+
+    private void updateOrder() {
+        try {
+
+            JSONArray orderArr;
+
+            if (itemList == null || itemList.length == 0) {
+                orderArr = createOrderWithoutOrgItems();
+            } else {
+                orderArr = createOrderWithOrgItems();
+            }
+
+            JSONObject orderObj = new JSONObject();
+            JSONObject orderDetails = new JSONObject(bundle.get("order_details").toString());
+            orderDetails.put("shipment", orderArr);
+
+            Log.d(TAG, "Selected Pair Org 2:" + selectedPairOrg.getString("tag"));
+
+            if (bundle.getString("type").equals("inbox")) {
+                orderObj.put("from", selectedPairOrg);
+                orderObj.put("to", defaultOrg);
+
+            } else {
+                orderObj.put("to", selectedPairOrg);
+                orderObj.put("from", defaultOrg);
+            }
+            orderObj.put("order", orderDetails);
+
+            final Bundle input = new Bundle();
+            input.putString("tag", selectedPairOrg.getString("tag"));
+            input.putString("body", orderObj.toString());
+            input.putString("id", orderDetails.getString("id"));
+            input.putString("message", "false");
+            input.putString("edit", "true");
+            input.putString("paired_org", selectedPairOrg.toString());
+            input.putString("type", bundle.getString("type"));
+
+            final Storage s = storage;
+            pd.show();
+
+            //start a new thread to process job
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    Message msg = new Message();
+
+                    try {
+                        Bundle output = new UpdateOrder(PlaceOrderActivity.this, s).execute(input).get();
+
+                        if (!output.getString("exception").equals("no_exception")) {
+                            showMessageOnUi(output.getString("exception"));
+                            output.putString("first_msg", output.getString("exception"));
+                            output.putString("second_msg", "null");
+                        } else {
+                            JSONObject newOrder = new JSONObject(output.getString("output"));
+                            output.putString("first_msg", "Success");
+                            output.putString("second_msg", "Order Id: " + newOrder.getString("order_id"));
+                            output.putString("third_msg", bundle.getString("type"));
+                        }
+                        msg.setData(output);
+                        sHandler.sendMessage(msg);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        input.putString("first_msg", e.getMessage());
+                        input.putString("second_msg", "null");
+                        msg.setData(input);
+                        sHandler.sendMessage(msg);
+                    }
+                }
+            }).start();
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showMessageOnUi(e.getMessage());
+        }
+    }
+
+    private void showEditOrderAlertBox(String titleMsg, String subjectMsg, final String type) {
+        try {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(titleMsg);
+            builder.setMessage(subjectMsg);
+            builder.setCancelable(true);
+            builder.setNeutralButton(android.R.string.ok,
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            if (type.equals("inbox")) {
+                                Intent intent = new Intent(PlaceOrderActivity.this, InboxActivity.class);
+                                startActivity(intent);
+                            } else {
+                                Intent intent = new Intent(PlaceOrderActivity.this, OutboxActivity.class);
+                                startActivity(intent);
+                            }
+
+                        }
+                    });
+
+            AlertDialog alert11 = builder.create();
+            alert11.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+            showMessageOnUi(e.getMessage());
+        }
+    }
+
+    Handler sHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            pd.dismiss();
+            if (msg.getData().getString("second_msg").equals("null")) {
+                showMessageOnUi(msg.getData().getString("first_msg"));
+            } else {
+                showEditOrderAlertBox(msg.getData().getString("first_msg"), msg.getData().getString("second_msg"),
+                        msg.getData().getString("third_msg"));
+            }
+        }
+    };
+
 }

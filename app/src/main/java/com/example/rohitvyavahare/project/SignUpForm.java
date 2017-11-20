@@ -26,7 +26,6 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.mikhaellopez.circularimageview.CircularImageView;
 import com.rohitvyavahare.Data.Storage;
-import com.rohitvyavahare.webservices.PostTokenId;
 
 import org.json.JSONObject;
 
@@ -142,7 +141,7 @@ public class SignUpForm extends AppCompatActivity
                             Log.d(TAG, "downloadUrl :" + downloadUrl);
                             try {
                                 account.put("profile_pic", downloadUrl);
-                                handleToken();
+//                                handleToken();
                                 new PostClass(SignUpForm.this).execute(account);
                             } catch (org.json.JSONException e) {
                                 e.printStackTrace();
@@ -155,7 +154,7 @@ public class SignUpForm extends AppCompatActivity
                 } else if (flag) {
 
                     account.put("profile_pic", "default");
-                    handleToken();
+//                    handleToken();
                     new PostClass(SignUpForm.this).execute(account);
 
                 }
@@ -168,17 +167,17 @@ public class SignUpForm extends AppCompatActivity
 
     }
 
-    private void handleToken() {
-        try {
-            String token = prefs.getString(getString(R.string.refresh_token), "null");
-            if(!token.equals("null")){
-                new PostTokenId(this, storage)
-                        .execute().get();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+//    private void handleToken() {
+//        try {
+//            String token = prefs.getString(getString(R.string.refresh_token), "null");
+//            if(!token.equals("null")){
+//                new PostTokenId(this, storage)
+//                        .execute().get();
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     public String BitMapToString(Bitmap bitmap) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -294,7 +293,6 @@ public class SignUpForm extends AppCompatActivity
                                     SharedPreferences prefs = getSharedPreferences(getString(R.string.private_file), MODE_PRIVATE);
                                     SharedPreferences.Editor editor = prefs.edit();
                                     editor.putString("uid", res.getString("id"));
-                                    editor.putString("first_token", "false");
                                     editor.apply();
 
 

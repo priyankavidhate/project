@@ -279,6 +279,7 @@ public class SettingActivity extends AppCompatActivity
                         storage.setHardResetOutbox("true");
                         storage.setHardResetPairedOrgs("true");
                         storage.setHardResetInbox("true");
+                        storage.setFirstToken("true");
 
                         new AlertDialog.Builder(SettingActivity.this)
                                 .setTitle("Success")

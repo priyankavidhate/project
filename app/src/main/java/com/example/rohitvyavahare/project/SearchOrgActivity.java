@@ -53,7 +53,7 @@ public class SearchOrgActivity extends AppCompatActivity {
     private List<ListData> mDataList = new ArrayList<>();
     private List<JSONObject> searchResult = new LinkedList<>();
     private Timer timer = new Timer();
-    private final long DELAY = 1000;
+    private final long DELAY = 500;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

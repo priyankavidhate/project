@@ -77,7 +77,7 @@ public class GetPairedOrgs extends AsyncTask<Bundle, Void, Bundle> {
                     for(int i=0; i<jArray.length(); i++) {
                         JSONObject org = jArray.getJSONObject(i);
 
-                        storage.setLastPairedOrgsTime(org.getString("tag"));
+                        storage.setLastSyncTime(org.getString("tag"));
 
                         if(!org.has("items")) {
                             continue;

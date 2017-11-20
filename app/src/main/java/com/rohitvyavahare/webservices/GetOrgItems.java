@@ -66,8 +66,9 @@ public class GetOrgItems extends AsyncTask<Bundle, Void, Bundle> {
                     try {
                         output.putString("exception", "no_exception");
                         JSONArray jArray = new JSONArray(output.getString("output"));
+                        Log.d(TAG, "Setting org itmes for org :" + input.getString("tag"));
                         storage.setOrgItems(input.getString("tag"), jArray.toString());
-                        storage.setLastPairedOrgsTime(input.getString("tag"));
+                        storage.setLastSyncTime(input.getString("tag"));
                     } catch (org.json.JSONException e) {
                         e.printStackTrace();
                         storage.setOrgItems(input.getString("tag"), _nullArr);

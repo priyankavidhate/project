@@ -34,7 +34,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         if(!string.equals("null")) {
             Log.d(TAG, "Starting Inbox activity");
             Intent intent = new Intent(LoginActivity.this, InboxActivity.class);
-//            Intent intent = new Intent(LoginActivity.this, OrgItemsActivity.class);
             intent.putExtra("uid", getString(R.string.private_file));
             startActivity(intent);
             finish();

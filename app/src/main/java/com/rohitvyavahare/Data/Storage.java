@@ -264,6 +264,7 @@ public class Storage {
     }
 
     public void setFirstToken(String _firstToken) {
+        Log.d(TAG, "Setting First Token :" + _firstToken);
         editor.putString(this._firstToken, _firstToken);
         editor.apply();
     }
@@ -280,7 +281,7 @@ public class Storage {
         editor.apply();
     }
 
-    public JSONArray getOrgItmes(String orgTag) {
+    public JSONArray getOrgItems(String orgTag) {
         try {
             String temp = prefs.getString(orgTag + this._orgItems, _nullArr);
             if(temp.equals(_nullArr)) {
@@ -298,11 +299,11 @@ public class Storage {
         editor.apply();
     }
 
-    public Long getLastPairedOrgsTime(String orgTag) {
+    public Long getLastSyncTime(String orgTag) {
         return prefs.getLong(orgTag + this._lastpairedOrgsTime, _defaultLong);
     }
 
-    public void setLastPairedOrgsTime(String orgTag) {
+    public void setLastSyncTime(String orgTag) {
         Long current_time = System.currentTimeMillis();
         editor.putLong(orgTag + this._lastpairedOrgsTime, current_time);
         editor.apply();

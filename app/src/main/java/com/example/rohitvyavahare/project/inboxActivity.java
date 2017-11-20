@@ -108,6 +108,8 @@ public class InboxActivity extends AppCompatActivity
         try {
             FirebaseToken token = new FirebaseToken();
             String storedToken = storage.getRefreshToken();
+            Log.d(TAG, "Registration id :"+ storedToken);
+            Log.d(TAG, "First token :" + storage.getFirstToken());
             if(token.verifyToken(storedToken) && storage.getFirstToken().equals("false")) {
                 Log.d(TAG, "Token present, no need to update");
                 return;
@@ -134,7 +136,7 @@ public class InboxActivity extends AppCompatActivity
             Log.d(TAG, "time_diff : " + timeDiff);
 
             if (time < 2 || timeDiff > (86400000 * 7)) {
-                Log.d(TAG, "No acivity since : " + time);
+                Log.d(TAG, "No activity since : " + time);
                 new UpdateActivity(this, storage).execute().get();
 
                 storage.setHardResetInbox("true");

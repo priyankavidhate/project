@@ -129,13 +129,23 @@ public class OutboxActivity extends AppCompatActivity
 
     private void setupDbPull() {
 
-        String hardReload = storage.getHardResetOutbox();
-        if (hardReload.equals("null") || hardReload.equals("true")) {
-            Log.d(TAG, "Hard Reload :" + hardReload);
-            handleGetOutbox();
-        }
-        else {
-            action();
+        try {
+            if (storage.getAssociatedOrgs() == null || storage.getAssociatedOrgs().length() == 0) {
+                action();
+                return;
+            }
+
+            String hardReload = storage.getHardResetOutbox();
+            if (hardReload.equals("null") || hardReload.equals("true")) {
+                Log.d(TAG, "Hard Reload :" + hardReload);
+                handleGetOutbox();
+            }
+            else {
+                action();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            showMessageOnUi(e.getMessage());
         }
     }
 
@@ -170,6 +180,10 @@ public class OutboxActivity extends AppCompatActivity
                 this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View layout = layoutInflater.inflate(R.layout.content_side_bar, null, true);
         rl.addView(layout);
+
+        listView = (ListView) findViewById(R.id.listView);
+        empty = (TextView) findViewById(R.id.empty);
+        empty.setText("Outbox is empty");
     }
 
     private void enableFloatingActionButton() {
@@ -238,7 +252,6 @@ public class OutboxActivity extends AppCompatActivity
 
     private void handleGetOutbox() {
         try {
-
             Bundle output;
             if(storage.getDefaultOrg() == null) {
                 output = preWork();
@@ -275,17 +288,9 @@ public class OutboxActivity extends AppCompatActivity
     private void action() {
         try {
 
-            listView = (ListView) findViewById(R.id.listView);
-            empty = (TextView) findViewById(R.id.empty);
+            Log.d(TAG, "In Action");
+
             final TextView currentOrgName = (TextView) findViewById(R.id.currentOrg);
-
-            String hardReload = storage.getHardResetOutbox();
-
-            if(hardReload.equals("null") || hardReload.equals("true")) {
-                Log.d(TAG, "hardReload true, going to make GET request");
-                handleGetOutbox();
-                return;
-            }
 
             // check any associated org is present
             if (storage.getAssociatedOrgs() == null || storage.getAssociatedOrgs().length() == 0) {
@@ -294,6 +299,13 @@ public class OutboxActivity extends AppCompatActivity
                 return;
             }
 
+            String hardReload = storage.getHardResetOutbox();
+
+            if(hardReload.equals("null") || hardReload.equals("true")) {
+                Log.d(TAG, "hardReload true, going to make GET request");
+                handleGetOutbox();
+                return;
+            }
 
             if (storage.getDefaultOrg() == null || !storage.getDefaultOrg().has("tag")) {
                 Log.d(TAG, "No default org");

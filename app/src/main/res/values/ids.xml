@@ -3,6 +3,8 @@
     <item name="OrgName" type="id" />
     <item name="EditItem" type="id" />
     <item name="editQuantity" type="id" />
+    <item name="editItem0" type="id" />
+    <item name="editQuantity0" type="id" />
     <item name="editItem1" type="id" />
     <item name="editQuantity1" type="id" />
     <item name="editItem2" type="id" />
@@ -99,6 +101,7 @@
 
 
     <array name="itemIds">
+        <item>@id/editItem0</item>
         <item>@id/editItem1</item>
         <item>@id/editItem2</item>
         <item>@id/editItem3</item>
@@ -122,6 +125,7 @@
     </array>
 
     <array name="quantityIds">
+        <item>@id/editQuantity0</item>
         <item>@id/editQuantity1</item>
         <item>@id/editQuantity2</item>
         <item>@id/editQuantity3</item>

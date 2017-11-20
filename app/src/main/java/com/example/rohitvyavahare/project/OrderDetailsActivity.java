@@ -4,13 +4,11 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -37,24 +35,19 @@ import android.widget.ViewSwitcher;
 
 import com.amulyakhare.textdrawable.TextDrawable;
 import com.amulyakhare.textdrawable.util.ColorGenerator;
+import com.rohitvyavahare.Data.Storage;
 import com.rohitvyavahare.extensions.Contact.ContactAdapter;
 import com.rohitvyavahare.extensions.Contact.ContactListData;
 import com.rohitvyavahare.webservices.GetContacts;
+import com.rohitvyavahare.webservices.UpdateOrder;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,6 +57,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
+import static com.example.rohitvyavahare.project.R.string.receiver_completed;
+
 public class OrderDetailsActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static final String TAG = "OrderDetailsActivity";
@@ -71,8 +66,6 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
     private List<ContactListData> contactDataList = new ArrayList<>();
     private TextDrawable.IBuilder mDrawableBuilder;
     private ColorGenerator mColorGenerator = ColorGenerator.MATERIAL;
-    private SharedPreferences prefs;
-    private SharedPreferences.Editor editor;
     private ProgressDialog progress;
     private Bundle bundle;
     private int band = 0;
@@ -83,18 +76,22 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
     private HashMap<String, String> outboxStatus = new HashMap<>();
     private HashMap<String, String> markedStatus = new HashMap<>();
     private String type = "inbox";
-    private JSONObject d_org;
+    private JSONObject defaultOrg;
     private String auth;
+    private Storage storage;
+    private JSONObject selectedPairOrg;
+    private JSONArray pairedOrgs;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_order_details);
+        storage = new Storage(this);
 
         bundle = getIntent().getExtras();
-        prefs = getSharedPreferences(getString(R.string.private_file), MODE_PRIVATE);
-        auth = prefs.getString("uid", "null");
+        //prefs = getSharedPreferences(getString(R.string.private_file), MODE_PRIVATE);
+        auth = storage.getUid();
 
         orders = bundle.get("orders").toString();
         type = bundle.getString("type");
@@ -124,16 +121,25 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
 //        }
 //        mAdView.loadAd(adRequest);
 
-//        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-//        fab.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//
-//            }
-//        });
-//        fab.setVisibility(View.INVISIBLE);
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.editOrder);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(OrderDetailsActivity.this, PlaceOrderActivity.class);
+                intent.putExtra("orderBundle", bundle);
+                startActivity(intent);
+            }
+        });
 
         try {
+            defaultOrg = storage.getDefaultOrg();
+            pairedOrgs = storage.getPairedOrgs(defaultOrg.getString("tag"));
+            selectedPairOrg = new JSONObject();
+            for (int i = 0; i < pairedOrgs.length(); i++) {
+                if (pairedOrgs.getJSONObject(i).has("name") && pairedOrgs.getJSONObject(i).getString("name").equals(bundle.get("org_name").toString())) {
+                    selectedPairOrg = pairedOrgs.getJSONObject(i);
+                }
+            }
 
             for (String key : bundle.keySet()) {
                 Log.d(TAG, key + " = \"" + bundle.get(key) + "\"");
@@ -182,7 +188,6 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
 
                 Toast.makeText(this.getApplicationContext(), "Order details are empty", Toast.LENGTH_SHORT).show();
 
-
             } else {
                 JSONObject obj = new JSONObject(bundle.get("order_details").toString());
 
@@ -191,8 +196,7 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
                 TextView textView;
                 ListView listView = (ListView) findViewById(R.id.listView);
 
-                d_org = new JSONObject(prefs.getString("default_org", "null"));
-                if (d_org.has("band") && Integer.parseInt(d_org.getString("band")) < 3) {
+                if (defaultOrg.has("band") && Integer.parseInt(defaultOrg.getString("band")) < 3) {
                     FrameLayout footerLayout = (FrameLayout) getLayoutInflater().inflate(R.layout.fragment_order, null);
                     footerLayout.findViewById(R.id.btn_add_comment).setOnClickListener(OrderDetailsActivity.this);
                     listView.addHeaderView(footerLayout);
@@ -246,17 +250,18 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
 
                     Log.d(TAG, "Order has messages");
                     JSONArray arr = new JSONArray(obj.getString("messages"));
-                    String default_org = prefs.getString("default_org", "null");
-                    if (!default_org.equals("null")) {
+                    String defaultOrgStr = defaultOrg.toString();
+                    if (defaultOrg != null && !defaultOrgStr.equals("null")) {
 
                         for (int i = 0; i < arr.length(); i++) {
-                            if (d_org.has("band") && Integer.parseInt(d_org.getString("band")) > 2) {
-                                Log.d(TAG, "Order has messages but band is > 2");
+                            if (defaultOrg.has("band") && Integer.parseInt(defaultOrg.getString("band")) > 2) {
+                                Log.d(TAG, "Order has messages but band is > 2, also disabling edit order option");
+                                fab.setVisibility(View.INVISIBLE);
                                 break;
                             }
-                            if (d_org.has("id") && d_org.has("name") && arr.getJSONObject(i).has("id") && d_org.getString("id").equals(arr.getJSONObject(i).getString("id")) && arr.getJSONObject(i).has("text")) {
+                            if (defaultOrg.has("id") && defaultOrg.has("name") && arr.getJSONObject(i).has("id") && defaultOrg.getString("id").equals(arr.getJSONObject(i).getString("id")) && arr.getJSONObject(i).has("text")) {
                                 Log.d(TAG, "Adding message");
-                                mDataList.add(new ListData(d_org.getString("name"), arr.getJSONObject(i).getString("text")));
+                                mDataList.add(new ListData(defaultOrg.getString("name"), arr.getJSONObject(i).getString("text")));
                             } else if (getIntent().getExtras().get("org_name") != null && arr.getJSONObject(i).has("text")) {
                                 Log.d(TAG, "Adding message 2 :" + getIntent().getExtras().get("org_name").toString());
                                 mDataList.add(new ListData(getIntent().getExtras().get("org_name").toString(), arr.getJSONObject(i).getString("text")));
@@ -278,6 +283,12 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
                 if (obj.getString("status").equals("cancelled")) {
                     Log.d(TAG, "Cancel is true");
                     cancel = true;
+                }
+
+                if(obj.getString("status").equals("shipping") || obj.getString("status").equals("cancelled")
+                        || obj.getString("status").equals("sender_completed") || obj.getString("status").equals("receiver_completed") ) {
+                    Log.d(TAG, "Status is shipping, disabling edit option");
+                    fab.setVisibility(View.INVISIBLE);
                 }
 
                 for (String by : markedStatusList) {
@@ -315,7 +326,7 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
                 setStatus(obj, type);
             }
 
-        } catch (JSONException | ParseException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -324,7 +335,7 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
         try {
 
             TableLayout ll = (TableLayout) findViewById(R.id.ShipmentTable);
-            ll.setColumnShrinkable(2,true);
+            ll.setColumnShrinkable(4,true);
             ll.setStretchAllColumns(true);
             TableRow.LayoutParams tlp = new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.MATCH_PARENT);
 
@@ -347,9 +358,27 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
             quantity.setPadding(5,2,5,2);
             quantity.setLayoutParams(tlp);
 
+            TextView brand = new TextView(this);
+            brand.setGravity(Gravity.CENTER);
+            brand.setText("Brand");
+            brand.setTypeface(null, Typeface.BOLD);
+            brand.setBackgroundDrawable( getResources().getDrawable(R.drawable.cell_shape) );
+            brand.setPadding(5,2,5,2);
+            brand.setLayoutParams(tlp);
+
+            TextView hsnCode = new TextView(this);
+            hsnCode.setGravity(Gravity.CENTER);
+            hsnCode.setText("HSN Code");
+            hsnCode.setTypeface(null, Typeface.BOLD);
+            hsnCode.setBackgroundDrawable( getResources().getDrawable(R.drawable.cell_shape) );
+            hsnCode.setPadding(5,2,5,2);
+            hsnCode.setLayoutParams(tlp);
+
             row.setGravity(Gravity.CENTER);
             row.addView(item);
             row.addView(quantity);
+            row.addView(brand);
+            row.addView(hsnCode);
             ll.addView(row, new TableLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT, TableLayout.LayoutParams.MATCH_PARENT));
 
             for(int i=0; i<input.length(); i++) {
@@ -377,9 +406,38 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
                 quantity.setPadding(5,2,5,2);
                 quantity.setLayoutParams(tlp);
 
+                brand = new TextView(this);
+                if(obj.has("brand")) {
+                    brand.setText(obj.getString("brand"));
+                    Log.d(TAG, "Brand is present");
+                } else {
+                    brand.setText("");
+                    Log.d(TAG, "Brand is not present");
+                }
+
+                brand.setGravity(Gravity.CENTER);
+                brand.setBackgroundDrawable( getResources().getDrawable(R.drawable.cell_shape) );
+                brand.setPadding(5,2,5,2);
+                brand.setLayoutParams(tlp);
+
+                hsnCode = new TextView(this);
+                if(obj.has("hsnCode")) {
+                    hsnCode.setText(obj.getString("hsnCode"));
+                    Log.d(TAG, "HSN Code is present");
+                } else {
+                    Log.d(TAG, "HSN Code is not present");
+                    hsnCode.setText("");
+                }
+                hsnCode.setGravity(Gravity.CENTER);
+                hsnCode.setBackgroundDrawable( getResources().getDrawable(R.drawable.cell_shape) );
+                hsnCode.setPadding(5,2,5,2);
+                hsnCode.setLayoutParams(tlp);
+
                 row.setGravity(Gravity.CENTER);
                 row.addView(item);
                 row.addView(quantity);
+                row.addView(brand);
+                row.addView(hsnCode);
                 ll.addView(row, new TableLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT, TableLayout.LayoutParams.MATCH_PARENT));
             }
 
@@ -429,7 +487,7 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
                             Log.d(TAG, "Case 1");
                             LinearLayout linearLayout = (LinearLayout) findViewById(R.id.StatusLinearLayout);
                             linearLayout.setVisibility(View.GONE);
-                            if (d_org.has("band") && Integer.parseInt(d_org.getString("band")) > 2) {
+                            if (defaultOrg.has("band") && Integer.parseInt(defaultOrg.getString("band")) > 2) {
                                 change_status.setVisibility(View.GONE);
                                 cancel.setVisibility(View.GONE);
                             } else {
@@ -474,7 +532,7 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
 
                             Log.d(TAG, "Case 5");
                             article = (TextView) findViewById(R.id.ViewReceiverCompletedStatus);
-                            article.setText(R.string.receiver_completed);
+                            article.setText(receiver_completed);
                             change_status.setVisibility(View.GONE);
                             cancel.setVisibility(View.GONE);
                             switcher.setVisibility(View.GONE);
@@ -539,7 +597,7 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
 
                             Log.d(TAG, "Case 5");
                             article = (TextView) findViewById(R.id.ViewReceiverCompletedStatus);
-                            article.setText(R.string.receiver_completed);
+                            article.setText(receiver_completed);
                             change_status.setVisibility(View.GONE);
                             cancel.setVisibility(View.GONE);
                             break;
@@ -591,19 +649,20 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
             JSONObject body = new JSONObject();
             JSONArray orgArr = new JSONArray();
 
-            String default_org_tag = d_org.getString("tag");
+            String defaultOrgTag = defaultOrg.getString("tag");
 
-            Log.d(TAG, "default orf id :" + default_org_tag);
-            String paired_orgs = prefs.getString(default_org_tag + getString(R.string.paired_orgs), "[{type : null}]");
-            Log.d(TAG, "Paired orgs :" + paired_orgs);
+            if (pairedOrgs == null) {
+                Log.d(TAG, "Paired orgs is null");
+                return;
+            }
 
-            JSONArray arr = new JSONArray(paired_orgs);
-            Log.d(TAG, "Paired orgs :" + arr.toString());
+            Log.d(TAG, "Default org tag :" + defaultOrgTag);
+            Log.d(TAG, "Paired orgs :" + pairedOrgs.toString(4));
 
             JSONObject current_org = null;
 
-            for (int k = 0; k < arr.length(); k++) {
-                JSONObject obj = arr.getJSONObject(k);
+            for (int k = 0; k < pairedOrgs.length(); k++) {
+                JSONObject obj = pairedOrgs.getJSONObject(k);
                 if (obj.has("tag") && obj.getString("tag").equals(bundle.getString("org_tag"))) {
                     current_org = obj;
                     break;
@@ -631,8 +690,6 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
                 output.putString("input", body.toString());
                 handleGetContacts(output);
             }
-
-
         } catch (Exception e) {
             e.printStackTrace();
 
@@ -698,7 +755,6 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
                 Toast.makeText(OrderDetailsActivity.this, message, Toast.LENGTH_SHORT).show();
             }
         });
-
     }
 
     private void handleBtnClick(int i) {
@@ -733,9 +789,9 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
                 JSONObject obj = new JSONObject(getIntent().getExtras().get("order_details").toString());
                 obj.put("status", "cancelled");
                 Bundle bundle = new Bundle();
-                bundle.putString("obj", obj.toString());
+                bundle.putString("order", obj.toString());
                 bundle.putString("message", "false");
-                new PutClass(OrderDetailsActivity.this).execute(bundle);
+                updateOrder(bundle);
             } catch (org.json.JSONException e) {
                 e.printStackTrace();
                 Toast.makeText(OrderDetailsActivity.this, "Something went wrong while retrieving Order Details, Please try again", Toast.LENGTH_SHORT).show();
@@ -744,9 +800,9 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
         } else if (i == R.id.btn_change_status || (i == R.id.btn_single_status && single_btn_clicked)) {
             Log.d(TAG, "Change status btn clicked");
             Bundle bundle = new Bundle();
-            bundle.putString("obj", getIntent().getExtras().get("order_details").toString());
+            bundle.putString("order", getIntent().getExtras().get("order_details").toString());
             bundle.putString("message", "false");
-            new PutClass(OrderDetailsActivity.this).execute(bundle);
+            updateOrder(bundle);
         } else if (i == R.id.btn_add_comment) {
 
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -775,22 +831,19 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
                         }
 
                         JSONObject msg = new JSONObject();
-                        JSONObject d_org = new JSONObject(prefs.getString("default_org", "null"));
-                        Log.d(TAG, "default org :" + d_org.toString());
-                        if (d_org.has("id") && d_org.has("name")) {
-                            msg.put("id", d_org.getString("id"));
+                        Log.d(TAG, "default org :" + defaultOrg.toString());
+                        if (defaultOrg.has("id") && defaultOrg.has("name")) {
+                            msg.put("id", defaultOrg.getString("id"));
                             msg.put("text", input.getText().toString().trim());
-                            prefs = getSharedPreferences(getString(R.string.private_file), MODE_PRIVATE);
-                            String auth = prefs.getString("uid", "null");
                             if (!auth.equals("null")) {
                                 msg.put("account_id", auth);
                                 arr.put(msg);
                                 obj.put("messages", arr);
                                 Log.d(TAG, "order_details after message add :" + obj.toString());
                                 Bundle bundle = new Bundle();
-                                bundle.putString("obj", obj.toString());
+                                bundle.putString("order", obj.toString());
                                 bundle.putString("message", "true");
-                                new PutClass(OrderDetailsActivity.this).execute(bundle);
+                                updateOrder(bundle);
 
                             }
 
@@ -932,233 +985,272 @@ public class OrderDetailsActivity extends AppCompatActivity implements View.OnCl
         }
     }
 
-    private void handleEditOrder() {
-        try{
-
-            // @TODO call place order
-            // @TODO check is it customer or owner
-
-        } catch (Exception e) {
-
-        }
-    }
-
     @Override
     public void onBackPressed() {
 
         this.onClick(findViewById(R.id.back_btn));
     }
 
-    private class PutClass extends AsyncTask<Bundle, Void, Void> {
+    private void updateOrder(Bundle order) {
+        try {
 
-        private Context context;
+            JSONObject orderObj = new JSONObject();
+            JSONObject orderDetails = new JSONObject(order.getString("order"));
+            if (bundle.getString("type").equals("inbox")) {
+                orderObj.put("from", selectedPairOrg);
+                orderObj.put("to", defaultOrg);
 
-        PutClass(Context c) {
-            this.context = c;
-        }
-
-        protected void onPreExecute() {
-            progress = new ProgressDialog(this.context);
-            progress.setMessage("Loading");
-            progress.show();
-        }
-
-        @Override
-        protected Void doInBackground(Bundle... params) {
-            try {
-                final Bundle bundle = params[0];
-                JSONObject b = new JSONObject(bundle.getString("obj"));
-
-                //TODO add to and from orgs in body
-
-                Uri uri = new Uri.Builder()
-                        .scheme("http")
-                        .encodedAuthority(getString(R.string.server_ur_templ))
-                        .path(getString(R.string.order))
-                        .appendPath(b.getString("id"))
-                        .appendQueryParameter("message", bundle.getString("message"))
-                        .build();
-
-
-                //@TODO add band as query parameter
-
-                URL url = new URL(uri.toString());
-                Log.d(TAG, "url:" + url.toString());
-
-                prefs = getSharedPreferences(getString(R.string.private_file), MODE_PRIVATE);
-                String auth = prefs.getString("uid", "null");
-
-                Log.d(TAG, "auth " + auth);
-                if (auth.equals("null")) {
-                    onPutExecute();
-                    //@TODO add alert
-                }
-
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setRequestMethod("PUT");
-                connection.setRequestProperty("Content-Type", "application/json");
-                connection.setRequestProperty("Accept", "application/json");
-                connection.setRequestProperty("Authorization", auth);
-                connection.setDoOutput(true);
-
-                Log.d(TAG, "default org for order :" + d_org.toString());
-
-                String paired_orgs = prefs.getString(d_org.getString("tag") + getString(R.string.paired_orgs), "null");
-                JSONObject to_org = new JSONObject();
-
-                Log.d(TAG, "Put request for type " + type);
-                Log.d(TAG, "paired_arr :" + paired_orgs);
-
-                JSONArray paired_arr = new JSONArray(paired_orgs);
-
-                Log.d(TAG, "org_name :" + getIntent().getExtras().get("org_name").toString());
-
-                for (int i = 0; i < paired_arr.length(); i++) {
-                    if (paired_arr.getJSONObject(i).has("name") && paired_arr.getJSONObject(i).getString("name").equals(getIntent().getExtras().get("org_name").toString())) {
-                        to_org = paired_arr.getJSONObject(i);
-                    }
-                }
-
-                if (!to_org.has("id")) {
-                    throw new NullPointerException("to_org can't be null");
-                }
-
-                JSONObject body = new JSONObject();
-                body.put("order", b);
-
-                if (type.equals("inbox")) {
-                    body.put("to", d_org);
-                    body.put("from", to_org);
-                    Log.d(TAG, "from org as type is inbox:" + to_org.toString());
-                } else {
-                    body.put("to", to_org);
-                    body.put("from", d_org);
-                    Log.d(TAG, "to org as type is outbox:" + to_org.toString());
-                }
-
-                DataOutputStream dStream = new DataOutputStream(connection.getOutputStream());
-                dStream.writeBytes(body.toString());
-                dStream.flush();
-                dStream.close();
-                int responseCode = connection.getResponseCode();
-
-                Log.d(TAG, "params:" + body.toString());
-
-                Log.d(TAG, "Response Code : " + responseCode);
-
-                final int response = responseCode;
-                final StringBuilder sb = new StringBuilder();
-                String line;
-                BufferedReader br;
-
-                try {
-                    br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                } catch (IOException ioe) {
-                    br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
-                }
-
-                while ((line = br.readLine()) != null) {
-                    sb.append(line);
-                    sb.append("\n");
-                }
-                br.close();
-
-                runOnUiThread(new Runnable() {
-
-                    @Override
-                    public void run() {
-
-                        switch (response) {
-                            case 200: {
-
-                                try {
-                                    Log.d(TAG, "response from put :" + sb.toString());
-                                    JSONObject obj = new JSONObject(sb.toString());
-                                    if (bundle.getString("message").equals("true")) {
-                                        if (noComment)
-                                            mDataList.remove(0);
-                                        JSONObject d_org = new JSONObject(prefs.getString("default_org", "null"));
-                                        Log.d(TAG, "default org :" + d_org.toString());
-                                        if (d_org.has("id") && d_org.has("name")) {
-                                            mDataList.add(new ListData(d_org.getString("name"), message));
-                                        }
-                                    }
-                                    editor = prefs.edit();
-//                                    JSONArray arr = new JSONArray(prefs.getString(getIntent().getExtras().get("org_name").toString(), "null"));
-                                    JSONArray arr = new JSONArray(prefs.getString(getIntent().getExtras().get("org_tag").toString(), "null"));
-
-                                    int position = Integer.parseInt(getIntent().getExtras().get("position").toString());
-                                    JSONArray newArr = new JSONArray();
-                                    for (int i = 0; i < arr.length(); i++) {
-                                        if (i == position) {
-                                            newArr.put(obj);
-                                        } else {
-                                            newArr.put(arr.getJSONObject(i));
-                                        }
-                                    }
-
-                                    Log.d(TAG, "orders before response from server: " + orders);
-
-                                    orders = newArr.toString();
-
-                                    Log.d(TAG, "orders after response from server: " + orders);
-
-//                                    editor.putString(getIntent().getExtras().get("org_name").toString(), newArr.toString());
-                                    editor.putString(getIntent().getExtras().get("org_tag").toString(), newArr.toString());
-                                    editor.commit();
-                                    Intent intent = new Intent(OrderDetailsActivity.this, OrderDetailsActivity.class);
-                                    Bundle b = new Bundle();
-                                    b.putString("order_details", obj.toString());
-                                    b.putString("orders", getIntent().getExtras().get("orders").toString());
-                                    b.putString("type", getIntent().getExtras().get("type").toString());
-                                    b.putString("org_name", getIntent().getExtras().get("org_name").toString());
-                                    b.putString("org_tag", getIntent().getExtras().get("org_tag").toString());
-                                    b.putString("position", Integer.toString(position));
-                                    onPutExecute();
-                                    intent.putExtras(b);
-                                    startActivity(intent);
-                                    finish();
-                                } catch (JSONException | NullPointerException e) {
-                                    e.printStackTrace();
-                                }
-
-                                Toast.makeText(context, "Successfully updated order", Toast.LENGTH_SHORT).show();
-
-                                break;
-                            }
-                            case 400: {
-                                Toast.makeText(context, "Opss Something went wrong please try again later, Status code :400", Toast.LENGTH_SHORT).show();
-                                onPutExecute();
-                                break;
-
-                            }
-                            default: {
-                                Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
-                                onPutExecute();
-                                break;
-                            }
-                        }
-                    }
-                });
-
-
-            } catch (IOException | org.json.JSONException | NullPointerException e) {
-                e.printStackTrace();
-                runOnUiThread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        onPutExecute();
-                        Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
+            } else {
+                orderObj.put("to", selectedPairOrg);
+                orderObj.put("from", defaultOrg);
             }
-            return null;
-        }
+            orderObj.put("order", orderDetails);
 
-        void onPutExecute() {
-            progress.dismiss();
-        }
+            Bundle input = new Bundle();
+            input.putString("tag", selectedPairOrg.getString("tag"));
+            input.putString("body", orderObj.toString());
+            input.putString("id", orderDetails.getString("id"));
+            input.putString("message", order.getString("message"));
+            input.putString("edit", "false");
+            input.putString("paired_org", selectedPairOrg.toString());
+            input.putString("type", type);
+            Bundle output = new UpdateOrder(OrderDetailsActivity.this, this.storage).execute(input).get();
 
+            if (!output.getString("exception").equals("no_exception")) {
+                showMessageOnUi(output.getString("exception"));
+                return;
+            }
+
+            JSONObject newOrder = new JSONObject(output.getString("output"));
+            Intent intent = new Intent(OrderDetailsActivity.this, OrderDetailsActivity.class);
+            Bundle b = new Bundle();
+            b.putString("order_details", newOrder.toString());
+            b.putString("orders",bundle.getString("orders"));
+            b.putString("type", bundle.getString("type"));
+            b.putString("org_name", bundle.getString("org_name"));
+            b.putString("org_tag", bundle.getString("org_tag"));
+            b.putString("position", bundle.getString("position"));
+            intent.putExtras(b);
+            startActivity(intent);
+            finish();
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showMessageOnUi(e.getMessage());
+        }
     }
+
+//    private class PutClass extends AsyncTask<Bundle, Void, Void> {
+//
+//        private Context context;
+//
+//        PutClass(Context c) {
+//            this.context = c;
+//        }
+//
+//        protected void onPreExecute() {
+//            progress = new ProgressDialog(this.context);
+//            progress.setMessage("Loading");
+//            progress.show();
+//        }
+//
+//        @Override
+//        protected Void doInBackground(Bundle... params) {
+//            try {
+//                final Bundle bundle = params[0];
+//                JSONObject b = new JSONObject(bundle.getString("obj"));
+//
+//                //TODO add to and from orgs in body
+//
+//                Uri uri = new Uri.Builder()
+//                        .scheme("http")
+//                        .encodedAuthority(getString(R.string.server_ur_templ))
+//                        .path(getString(R.string.order))
+//                        .appendPath(b.getString("id"))
+//                        .appendQueryParameter("message", bundle.getString("message"))
+//                        .build();
+//
+//
+//                //@TODO add band as query parameter
+//
+//                URL url = new URL(uri.toString());
+//                Log.d(TAG, "url:" + url.toString());
+//
+//                prefs = getSharedPreferences(getString(R.string.private_file), MODE_PRIVATE);
+//                String auth = prefs.getString("uid", "null");
+//
+//                Log.d(TAG, "auth " + auth);
+//                if (auth.equals("null")) {
+//                    onPutExecute();
+//                    //@TODO add alert
+//                }
+//
+//                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+//                connection.setRequestMethod("PUT");
+//                connection.setRequestProperty("Content-Type", "application/json");
+//                connection.setRequestProperty("Accept", "application/json");
+//                connection.setRequestProperty("Authorization", auth);
+//                connection.setDoOutput(true);
+//
+//                Log.d(TAG, "default org for order :" + defaultOrg.toString());
+//
+//                String paired_orgs = prefs.getString(defaultOrg.getString("tag") + getString(R.string.paired_orgs), "null");
+//                JSONObject to_org = new JSONObject();
+//
+//                Log.d(TAG, "Put request for type " + type);
+//                Log.d(TAG, "paired_arr :" + paired_orgs);
+//
+//                JSONArray paired_arr = new JSONArray(paired_orgs);
+//
+//                Log.d(TAG, "org_name :" + getIntent().getExtras().get("org_name").toString());
+//
+//                for (int i = 0; i < paired_arr.length(); i++) {
+//                    if (paired_arr.getJSONObject(i).has("name") && paired_arr.getJSONObject(i).getString("name").equals(getIntent().getExtras().get("org_name").toString())) {
+//                        to_org = paired_arr.getJSONObject(i);
+//                    }
+//                }
+//
+//                if (!to_org.has("id")) {
+//                    throw new NullPointerException("to_org can't be null");
+//                }
+//
+//                JSONObject body = new JSONObject();
+//                body.put("order", b);
+//
+//                if (type.equals("inbox")) {
+//                    body.put("to", defaultOrg);
+//                    body.put("from", to_org);
+//                    Log.d(TAG, "from org as type is inbox:" + to_org.toString());
+//                } else {
+//                    body.put("to", to_org);
+//                    body.put("from", defaultOrg);
+//                    Log.d(TAG, "to org as type is outbox:" + to_org.toString());
+//                }
+//
+//                DataOutputStream dStream = new DataOutputStream(connection.getOutputStream());
+//                dStream.writeBytes(body.toString());
+//                dStream.flush();
+//                dStream.close();
+//                int responseCode = connection.getResponseCode();
+//
+//                Log.d(TAG, "params:" + body.toString(4));
+//
+//                Log.d(TAG, "Response Code : " + responseCode);
+//
+//                final int response = responseCode;
+//                final StringBuilder sb = new StringBuilder();
+//                String line;
+//                BufferedReader br;
+//
+//                try {
+//                    br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+//                } catch (IOException ioe) {
+//                    br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
+//                }
+//
+//                while ((line = br.readLine()) != null) {
+//                    sb.append(line);
+//                    sb.append("\n");
+//                }
+//                br.close();
+//
+//                runOnUiThread(new Runnable() {
+//
+//                    @Override
+//                    public void run() {
+//
+//                        switch (response) {
+//                            case 200: {
+//
+//                                try {
+//                                    Log.d(TAG, "response from put :" + sb.toString());
+//                                    JSONObject obj = new JSONObject(sb.toString());
+//                                    if (bundle.getString("message").equals("true")) {
+//                                        if (noComment)
+//                                            mDataList.remove(0);
+//                                        JSONObject d_org = new JSONObject(prefs.getString("default_org", "null"));
+//                                        Log.d(TAG, "default org :" + d_org.toString());
+//                                        if (d_org.has("id") && d_org.has("name")) {
+//                                            mDataList.add(new ListData(d_org.getString("name"), message));
+//                                        }
+//                                    }
+//                                    editor = prefs.edit();
+////                                    JSONArray arr = new JSONArray(prefs.getString(getIntent().getExtras().get("org_name").toString(), "null"));
+//                                    JSONArray arr = new JSONArray(prefs.getString(getIntent().getExtras().get("org_tag").toString(), "null"));
+//
+//                                    int position = Integer.parseInt(getIntent().getExtras().get("position").toString());
+//                                    JSONArray newArr = new JSONArray();
+//                                    for (int i = 0; i < arr.length(); i++) {
+//                                        if (i == position) {
+//                                            newArr.put(obj);
+//                                        } else {
+//                                            newArr.put(arr.getJSONObject(i));
+//                                        }
+//                                    }
+//
+//                                    Log.d(TAG, "orders before response from server: " + orders);
+//
+//                                    orders = newArr.toString();
+//
+//                                    Log.d(TAG, "orders after response from server: " + orders);
+//
+////                                    editor.putString(getIntent().getExtras().get("org_name").toString(), newArr.toString());
+//                                    editor.putString(getIntent().getExtras().get("org_tag").toString(), newArr.toString());
+//                                    editor.commit();
+//                                    Intent intent = new Intent(OrderDetailsActivity.this, OrderDetailsActivity.class);
+//                                    Bundle b = new Bundle();
+//                                    b.putString("order_details", obj.toString());
+//                                    b.putString("orders", getIntent().getExtras().get("orders").toString());
+//                                    b.putString("type", getIntent().getExtras().get("type").toString());
+//                                    b.putString("org_name", getIntent().getExtras().get("org_name").toString());
+//                                    b.putString("org_tag", getIntent().getExtras().get("org_tag").toString());
+//                                    b.putString("position", Integer.toString(position));
+//                                    onPutExecute();
+//                                    intent.putExtras(b);
+//                                    startActivity(intent);
+//                                    finish();
+//                                } catch (JSONException | NullPointerException e) {
+//                                    e.printStackTrace();
+//                                }
+//
+//                                Toast.makeText(context, "Successfully updated order", Toast.LENGTH_SHORT).show();
+//
+//                                break;
+//                            }
+//                            case 400: {
+//                                Toast.makeText(context, "Opss Something went wrong please try again later, Status code :400", Toast.LENGTH_SHORT).show();
+//                                onPutExecute();
+//                                break;
+//
+//                            }
+//                            default: {
+//                                Toast.makeText(context, "Opss Something went wrong please try again later", Toast.LENGTH_SHORT).show();
+//                                onPutExecute();
+//                                break;
+//                            }
+//                        }
+//                    }
+//                });
+//
+//
+//            } catch (IOException | org.json.JSONException | NullPointerException e) {
+//                e.printStackTrace();
+//                runOnUiThread(new Runnable() {
+//
+//                    @Override
+//                    public void run() {
+//                        onPutExecute();
+//                        Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
+//                    }
+//                });
+//            }
+//            return null;
+//        }
+//
+//        void onPutExecute() {
+//            progress.dismiss();
+//        }
+//
+//    }
 }

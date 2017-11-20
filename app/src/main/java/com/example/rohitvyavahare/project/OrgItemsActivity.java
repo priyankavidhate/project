@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
+
 public class OrgItemsActivity extends AppCompatActivity
         implements View.OnClickListener {
     private Button btnAdd;
@@ -192,7 +193,7 @@ public class OrgItemsActivity extends AppCompatActivity
             builder.setTitle("How to add items?");
             builder.setMessage("You can add items either by entering them manually or via .txt file. " +
                     "File should have one comma(,) separated entry on each line. " +
-                    "Example: biscuit, ParleG, 1234abc" +
+                    "Example: biscuit, ParleG, 1234abc." +
                     "For deleting an item click on item. ");
 
             builder.setPositiveButton("File",
@@ -289,7 +290,7 @@ public class OrgItemsActivity extends AppCompatActivity
     }
 
     private void setupAdapter() {
-        adapterData = storage.getOrgItmes(orgTag);
+        adapterData = storage.getOrgItems(orgTag);
         LinearLayoutManager llm = new LinearLayoutManager(this);
         rv.setLayoutManager(llm);
 
@@ -376,7 +377,7 @@ public class OrgItemsActivity extends AppCompatActivity
 
     private void handlePostOrgItems() {
         try {
-            String items = storage.getOrgItmes(this.orgTag).toString();
+            String items = storage.getOrgItems(this.orgTag).toString();
             JSONObject obj = storage.getAssociatedOrgs().getJSONObject(result[0]);
             Bundle input = new Bundle();
             input.putString("body", items);
