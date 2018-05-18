@@ -1,0 +1,40 @@
+# Start a 3 node cluster and join it together automatically. Uses
+# local ephemeral disk for database storage.
+ 
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: couchdb
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        run: couchdb
+    spec:
+      containers:
+        - name: couchdb
+          image: kocolosk/couchdb:2.0-prod
+          imagePullPolicy: Always
+          env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: ERL_FLAGS
+            value: "-name couchdb@$(POD_IP) -setcookie monster"
+          ports:
+          - name: couchdb
+            containerPort: 5984
+          - name: epmd
+            containerPort: 4369
+          - containerPort: 9100
+          volumeMounts:
+          - name: database-storage
+            mountPath: /var/lib/couchdb
+        - name: mem3-kube
+          image: kocolosk/mem3-kube
+          imagePullPolicy: Always
+      volumes:
+        - name: database-storage
+          emptyDir: {}

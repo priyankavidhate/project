@@ -1,0 +1,12 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: couchdb-ingress
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: couchdb-ip
+  labels:
+    run: couchdb
+spec:
+  backend:
+    serviceName: couchdb
+    servicePort: 5984

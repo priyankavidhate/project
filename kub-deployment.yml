@@ -1,0 +1,72 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: bigital-backend
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: bigital-backend
+    spec:
+      containers:
+      - name: bigital-backend
+        image: gcr.io/project-ae9b7/bigital-backend:v1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        -
+          name: DBURL
+          value: "http://admin:Rohit_12pune1991@35.201.95.2"
+        -
+          name: PORT
+          value: "8080"
+        -
+          name: ACCOUNTDB
+          value: "account"
+        -
+          name: ORDERSDB
+          value: "order"
+        -
+          name: ACTIVITYDB
+          value: "activity"
+        -
+          name: ORGDB
+          value: "org"
+        -
+          name: SENDGRID_API_KEY
+          value: "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"
+        -
+          name: COMPANYEMAIL
+          value: "rohit.vyavahare@gmail.com"
+        -
+          name: DEBUG
+          value: "project*"
+        -
+          name: AUTHY_KEY
+          value: "NTIjys0ZA255KrjZ19JhLNJk8zma3wJF"
+        -
+          name: PHONE_VERIFICATION_ENDPOINT
+          value: "https://api.authy.com/protected/json/phones/verification/start"
+        -
+          name: CODE_VERIFICATION_ENDPOINT
+          value: "https://api.authy.com/protected/json/phones/verification/check"
+        -
+          name: CODE_LENGTH
+          value: "6"
+        -
+          name: GCM_API_KEY
+          value: "AAAAmIbI07Q:APA91bH-rcMH3Y1VNBKp2W-Yr2kcYDLhKW07ap9Yp2g5j7EKsWfTQd0f3ulxs9sO2uo2-eVMm7ZfzatLDOIJg5HPuN5DSNlQw9W0-YVFzk22WIMGrg59L3Q7v9v7UQo4JsZcNrkIYe0n-xkVuYOuvp_j41UpebnTmA"
+        -
+          name: TWILIO_ACCOUNT_SID
+          value: "AC1c54a22a64ed3fb956f65569d757e3be"
+        -
+          name: TWILIO_AUTH_TOKEN
+          value: "0fc72ec1bc593462f7ffc2bbe4a062d8"
+        -
+          name: TWILIO_PHONE_NUMBER
+          value: "+18776753652"
+        -
+          name: FEEDBACKDB
+          value: "feedback"

@@ -1,0 +1,44 @@
+{
+  "name": "project",
+  "version": "1.0.0",
+  "description": "android app backend services",
+  "main": "lib/index.js",
+  "scripts": {
+    "babel": "babel src -d lib",
+    "start": "node lib/index.js"
+  },
+  "dependencies": {
+    "abacus-dbclient": "0.0.5",
+    "abacus-debug": "0.0.5",
+    "abacus-express": "0.0.5",
+    "abacus-partition": "0.0.5",
+    "abacus-request": "0.0.5",
+    "abacus-retry": "0.0.5",
+    "abacus-yieldable": "0.0.5",
+    "authy": "^1.2.0",
+    "babel-preset-es2017": "^1.6.1",
+    "dotenv": "^2.0.0",
+    "murmurhash": "0.0.2",
+    "node-gcm": "^0.14.4",
+    "pouchdb": "^6.0.6",
+    "rand-token": "^0.3.0",
+    "sendgrid": "^4.7.0",
+    "shortid": "^2.2.6",
+    "twilio": "^3.10.1",
+    "underscore": "^1.8.3"
+  },
+  "devDependencies": {
+    "abacus-eslint": "0.0.5",
+    "abacus-mocha": "0.0.5",
+    "babel-cli": "^6.11.4",
+    "chai": "^3.5.0",
+    "chai-as-promised": "^5.3.0",
+    "sinon": "^1.17.3"
+  },
+  "engines": {
+    "node": ">=4.0.0",
+    "npm": "3.8.5"
+  },
+  "author": "Rohit Vyavahare",
+  "license": "ISC"
+}
