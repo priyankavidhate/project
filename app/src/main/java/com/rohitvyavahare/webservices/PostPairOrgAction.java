@@ -6,7 +6,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.example.rohitvyavahare.project.R;
+import com.bigital.rohitvyavahare.project.R;
 import com.rohitvyavahare.Data.Storage;
 import com.rohitvyavahare.webservices.REST.Call;
 
@@ -44,7 +44,7 @@ public class PostPairOrgAction extends AsyncTask<Bundle, Void, Bundle> {
 
 
             Uri uri = new Uri.Builder()
-                    .scheme("http")
+                    .scheme(c.getString(R.string.http))
                     .encodedAuthority(c.getString(R.string.server_ur_templ))
                     .path(c.getString(R.string.perform_action_on_org))
                     .appendPath(body.getString("id"))

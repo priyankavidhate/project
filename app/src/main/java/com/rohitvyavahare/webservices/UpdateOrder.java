@@ -6,7 +6,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.example.rohitvyavahare.project.R;
+import com.bigital.rohitvyavahare.project.R;
 import com.rohitvyavahare.Data.Storage;
 import com.rohitvyavahare.webservices.REST.Call;
 
@@ -48,7 +48,7 @@ public class UpdateOrder extends AsyncTask<Bundle, Void, Bundle> {
             //TODO add to and from orgs in body
 
             Uri uri = new Uri.Builder()
-                    .scheme("https")
+                    .scheme(c.getString(R.string.http))
                     .encodedAuthority(host)
                     .path(endpoint)
                     .appendPath(input.getString("id"))

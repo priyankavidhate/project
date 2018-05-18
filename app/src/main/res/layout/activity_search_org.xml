@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context="com.example.rohitvyavahare.project.SearchOrgActivity">
+    tools:context="com.bigital.rohitvyavahare.project.SearchOrgActivity">
 
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
@@ -32,7 +32,7 @@
         android:paddingLeft="@dimen/activity_horizontal_margin"
         android:paddingRight="@dimen/activity_horizontal_margin"
         android:paddingTop="@dimen/activity_vertical_margin"
-        tools:context="com.example.rohitvyavahare.project.SearchOrgActivity">
+        tools:context="com.bigital.rohitvyavahare.project.SearchOrgActivity">
 
         <EditText
             android:id="@+id/SearchOrg"
@@ -51,7 +51,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginTop="120sp"
-            tools:context="com.example.rohitvyavahare.project.SearchOrgActivity">
+            tools:context="com.bigital.rohitvyavahare.project.SearchOrgActivity">
 
         </ListView>
 

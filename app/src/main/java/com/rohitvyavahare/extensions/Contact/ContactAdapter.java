@@ -9,7 +9,7 @@ import android.widget.BaseAdapter;
 
 import com.amulyakhare.textdrawable.TextDrawable;
 import com.amulyakhare.textdrawable.util.ColorGenerator;
-import com.example.rohitvyavahare.project.R;
+import com.bigital.rohitvyavahare.project.R;
 
 import java.util.List;
 

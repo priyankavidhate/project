@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.rohitvyavahare.project">
+    package="com.bigital.rohitvyavahare.project">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -14,21 +14,22 @@
         android:label="@string/app_name"
         android:largeHeap="true"
         android:supportsRtl="true"
+        android:alwaysRetainTaskState="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".LoginActivity">
+        <activity android:name="com.bigital.rohitvyavahare.project.LoginActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".SignUpForm" />
+        <activity android:name="com.bigital.rohitvyavahare.project.SignUpForm" />
         <activity
-            android:name=".AddEmployeeActivity"
+            android:name="com.bigital.rohitvyavahare.project.AddEmployeeActivity"
             android:label="@string/title_activity_add_employee"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".PlaceOrderActivity"
+            android:name="com.bigital.rohitvyavahare.project.PlaceOrderActivity"
             android:label="@string/title_activity_place_order"
             android:theme="@style/AppTheme.NoActionBar" />
         <!--
@@ -40,69 +41,69 @@
             android:value="@integer/google_play_services_version" />
 
         <!-- <activity android:name=".LoginActivity"></activity> -->
-        <activity android:name=".VerifyActivity" />
+        <activity android:name="com.bigital.rohitvyavahare.project.VerifyActivity" />
         <activity
-            android:name=".OrderDetailsActivity"
+            android:name="com.bigital.rohitvyavahare.project.OrderDetailsActivity"
             android:label="@string/title_activity_order_details"
             android:theme="@style/AppTheme.Detail" />
         <activity
-            android:name=".InboxActivity"
+            android:name="com.bigital.rohitvyavahare.project.InboxActivity"
             android:label="@string/title_activity_inbox"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".CreateOrgActivity"
+            android:name="com.bigital.rohitvyavahare.project.CreateOrgActivity"
             android:label="@string/title_activity_create_org"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".PairOrgActivity"
+            android:name="com.bigital.rohitvyavahare.project.PairOrgActivity"
             android:label="@string/title_activity_pair_org"
             android:theme="@style/AppTheme.NoActionBar" />
-        <activity android:name=".PairOrgDetailsActivity" />
+        <activity android:name="com.bigital.rohitvyavahare.project.PairOrgDetailsActivity" />
         <activity
-            android:name=".OrdersActivity"
+            android:name="com.bigital.rohitvyavahare.project.OrdersActivity"
             android:label="@string/title_activity_orders"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".OutboxActivity"
+            android:name="com.bigital.rohitvyavahare.project.OutboxActivity"
             android:label="@string/title_activity_outbox"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".SearchOrgActivity"
+            android:name="com.bigital.rohitvyavahare.project.SearchOrgActivity"
             android:label="@string/title_activity_search_org"
             android:theme="@style/AppTheme.NoActionBar" />
 
-        <service android:name=".FirebaseToken">
+        <service android:name="com.bigital.rohitvyavahare.project.FirebaseToken">
             <intent-filter>
                 <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
             </intent-filter>
         </service>
-        <service android:name=".MessagingService">
+        <service android:name="com.bigital.rohitvyavahare.project.MessagingService">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
 
         <activity
-            android:name=".SettingActivity"
+            android:name="com.bigital.rohitvyavahare.project.SettingActivity"
             android:label="@string/title_activity_setting"
             android:theme="@style/AppTheme.NoActionBar" />
-        <activity android:name=".EditProfileActivity" />
+        <activity android:name="com.bigital.rohitvyavahare.project.EditProfileActivity" />
         <activity
-            android:name=".EditOrgActivity"
+            android:name="com.bigital.rohitvyavahare.project.EditOrgActivity"
             android:label="@string/title_activity_edit_org"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".ViewOrgDetailsActivity"
+            android:name="com.bigital.rohitvyavahare.project.ViewOrgDetailsActivity"
             android:label="@string/title_activity_view_org"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".OrdersActivityV2"
+            android:name="com.bigital.rohitvyavahare.project.OrdersActivityV2"
             android:label="@string/title_activity_orders"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".OrgItemsActivity"
+            android:name="com.bigital.rohitvyavahare.project.OrgItemsActivity"
             android:label="@string/title_activity_org_items"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NoActionBar"/>
     </application>
 
 </manifest>

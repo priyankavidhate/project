@@ -11,7 +11,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context="com.example.rohitvyavahare.project.PlaceOrderActivity">
+    tools:context="com.bigital.rohitvyavahare.project.PlaceOrderActivity">
 
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
@@ -53,7 +53,7 @@
                 android:paddingLeft="@dimen/activity_horizontal_margin"
                 android:paddingRight="@dimen/activity_horizontal_margin"
                 android:paddingTop="@dimen/activity_vertical_margin"
-                tools:context="com.example.rohitvyavahare.project.PlaceOrderActivity">
+                tools:context="com.bigital.rohitvyavahare.project.PlaceOrderActivity">
 
                 <TextView
                     android:id="@+id/OrgName"

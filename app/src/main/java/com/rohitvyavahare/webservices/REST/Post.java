@@ -7,7 +7,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.example.rohitvyavahare.project.R;
+import com.bigital.rohitvyavahare.project.R;
 
 import org.json.JSONException;
 import org.json.JSONObject;

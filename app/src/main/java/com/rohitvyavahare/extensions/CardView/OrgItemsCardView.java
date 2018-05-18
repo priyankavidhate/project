@@ -12,7 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.example.rohitvyavahare.project.R;
+import com.bigital.rohitvyavahare.project.R;
 import com.rohitvyavahare.Data.Storage;
 
 import org.json.JSONArray;

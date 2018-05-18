@@ -5,7 +5,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.ViewSwitcher;
 
-import com.example.rohitvyavahare.project.R;
+import com.bigital.rohitvyavahare.project.R;
 import com.mikhaellopez.circularimageview.CircularImageView;
 
 /**

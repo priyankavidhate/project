@@ -54,11 +54,11 @@
                         android:id="@+id/Item"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginLeft="15sp"
-                        android:layout_marginStart="15sp"
+                        android:layout_marginLeft="12sp"
+                        android:layout_marginStart="12sp"
                         android:layout_marginTop="5sp"
                         android:textColor="@color/white"
-                        android:textSize="25sp" />
+                        android:textSize="22sp" />
 
                     <!--<TextView-->
                     <!--android:id="@+id/Qunatity"-->
@@ -72,7 +72,7 @@
                         android:id="@+id/Line1"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2sp"
+                        android:layout_marginTop="1sp"
                         android:textColor="@color/white"
                         android:textSize="12sp" />
 
@@ -80,7 +80,7 @@
                         android:id="@+id/Line2"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="1.5sp"
+                        android:layout_marginTop="1sp"
                         android:textColor="@color/white"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -120,7 +120,7 @@
                     android:paddingLeft="@dimen/activity_horizontal_margin"
                     android:paddingRight="@dimen/activity_horizontal_margin"
                     android:paddingTop="@dimen/activity_vertical_margin"
-                    tools:context="com.example.rohitvyavahare.project.OrderDetailsActivity">
+                    tools:context="com.bigital.rohitvyavahare.project.OrderDetailsActivity">
                 </TableLayout>
             </LinearLayout>
 
@@ -322,7 +322,7 @@
                     android:id="@+id/listView"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    tools:context="com.example.rohitvyavahare.project.OrderDetailsActivity">
+                    tools:context="com.bigital.rohitvyavahare.project.OrderDetailsActivity">
 
                 </ListView>
 

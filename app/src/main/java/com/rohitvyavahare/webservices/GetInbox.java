@@ -7,8 +7,8 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.example.rohitvyavahare.project.R;
-import com.example.rohitvyavahare.project.Utils;
+import com.bigital.rohitvyavahare.project.R;
+import com.bigital.rohitvyavahare.project.Utils;
 import com.rohitvyavahare.Data.Storage;
 import com.rohitvyavahare.webservices.REST.Call;
 
@@ -29,14 +29,16 @@ public class GetInbox extends AsyncTask<Bundle, Void, Bundle> {
     private Utils util;
     private Context c;
     private Storage storage;
+    private String skip = "0";
 
 
-    public GetInbox(Context c, Storage storage) {
+    public GetInbox(Context c, Storage storage, int skip) {
         progress = new ProgressDialog(c);
         this.c = c;
         this.storage = storage;
         this.defaultOrg = storage.getDefaultOrg();
         util = new Utils();
+        this.skip = "" + skip;
     }
 
     @Override
@@ -53,9 +55,10 @@ public class GetInbox extends AsyncTask<Bundle, Void, Bundle> {
         try {
 
             Uri uri = new Uri.Builder()
-                    .scheme("https")
+                    .scheme(c.getString(R.string.http))
                     .encodedAuthority(c.getString(R.string.server_ur_templ))
                     .path(c.getString(R.string.org))
+                    .appendQueryParameter("skip", this.skip)
                     .appendPath(defaultOrg.getString("id"))
                     .appendPath(c.getString(R.string.inbox))
                     .build();
@@ -73,6 +76,7 @@ public class GetInbox extends AsyncTask<Bundle, Void, Bundle> {
                         for (int i = 0; i < jArray.length(); ++i) {
                             JSONObject rec = jArray.getJSONObject(i);
                             rec = rec.getJSONObject("doc");
+
                             JSONObject value = rec.getJSONObject("value");
                             value.put("id", rec.getString("_id"));
 

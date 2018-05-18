@@ -3,7 +3,7 @@ package com.rohitvyavahare.Notification;
 import android.content.Context;
 import android.util.Log;
 
-import com.example.rohitvyavahare.project.Utils;
+import com.bigital.rohitvyavahare.project.Utils;
 import com.rohitvyavahare.Data.Storage;
 
 import org.json.JSONArray;

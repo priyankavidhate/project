@@ -6,7 +6,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.example.rohitvyavahare.project.R;
+import com.bigital.rohitvyavahare.project.R;
 import com.rohitvyavahare.Data.Storage;
 import com.rohitvyavahare.webservices.REST.Call;
 
@@ -38,7 +38,7 @@ public class GetOrg  extends AsyncTask<Bundle, Void, Bundle> {
 
             String tag = input.getString("tag");
             Uri uri = new Uri.Builder()
-                    .scheme("https")
+                    .scheme(c.getString(R.string.http))
                     .encodedAuthority(c.getString(R.string.server_ur_templ))
                     .path(c.getString(R.string.tag))
                     .appendPath(tag)

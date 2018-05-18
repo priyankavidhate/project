@@ -10,7 +10,7 @@
         android:id="@+id/listView"
         android:layout_width="match_parent"
         android:layout_height="fill_parent"
-        tools:context="com.example.rohitvyavahare.project.ViewOrgDetailsActivity">
+        tools:context="com.bigital.rohitvyavahare.project.ViewOrgDetailsActivity">
 
     </ListView>
 

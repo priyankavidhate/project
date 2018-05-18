@@ -12,7 +12,7 @@
         android:layout_height="match_parent"
         android:fitsSystemWindows="true"
         android:focusableInTouchMode="true"
-        tools:context="com.example.rohitvyavahare.project.PlaceOrderActivity">
+        tools:context="com.bigital.rohitvyavahare.project.PlaceOrderActivity">
 
         <android.support.design.widget.AppBarLayout
             android:layout_width="match_parent"
@@ -57,7 +57,7 @@
                 android:paddingTop="@dimen/activity_vertical_margin"
                 android:shrinkColumns="*"
                 android:stretchColumns="*"
-                tools:context="com.example.rohitvyavahare.project.PlaceOrderActivity">
+                tools:context="com.bigital.rohitvyavahare.project.PlaceOrderActivity">
 
                 <!--<TextView-->
                 <!--android:id="@+id/OrgName"-->

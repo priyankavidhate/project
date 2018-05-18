@@ -7,7 +7,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.example.rohitvyavahare.project.R;
+import com.bigital.rohitvyavahare.project.R;
 import com.rohitvyavahare.Data.Storage;
 import com.rohitvyavahare.webservices.REST.Call;
 
@@ -56,7 +56,7 @@ public class PostFeedback extends AsyncTask<Bundle, Void, Bundle> {
             obj.put("message", input.getString("message"));
 
             Uri uri = new Uri.Builder()
-                    .scheme("https")
+                    .scheme(c.getString(R.string.http))
                     .encodedAuthority(host)
                     .path(endpoint)
                     .appendPath(uid)

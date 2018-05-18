@@ -7,7 +7,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.example.rohitvyavahare.project.R;
+import com.bigital.rohitvyavahare.project.R;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -28,11 +28,13 @@ public class GetContacts extends AsyncTask<Bundle, Void, Bundle> {
     private static final String TAG = "GetContacts";
     private String host;
     private String endpoint;
+    private Context c;
 
     public GetContacts(Context c) {
         progress = new ProgressDialog(c);
         host = c.getString(R.string.server_ur_templ);
         endpoint = c.getString(R.string.get_contacts);
+        this.c = c;
     }
 
     @Override
@@ -51,7 +53,7 @@ public class GetContacts extends AsyncTask<Bundle, Void, Bundle> {
             Bundle bundle = params[0];
 
             Uri uri = new Uri.Builder()
-                    .scheme("https")
+                    .scheme(c.getString(R.string.http))
                     .encodedAuthority(host)
                     .path(endpoint)
                     .build();

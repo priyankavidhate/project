@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Project</string>
+    <string name="app_name">Bigital</string>
     <string name="title_text">Welcome to\n The Project</string>
     <!-- Sign-in status messages -->
     <string name="signed_in_fmt">Signed in as: %s</string>
@@ -39,7 +39,7 @@
     <string name="last_name">Last Name*</string>
     <string name="answer"> Answer*</string>
     <string name="email_id">email id</string>
-    <string name="contact_number">contact_number</string>
+    <string name="contact_number">Contact Number</string>
     <string name="phone_number">phone_number</string>
     <string name="confirm">confirm</string>
 
@@ -64,7 +64,9 @@
     <!--project-backend.mybluemix.net-->
     <!--192.168.0.104:5001-->
     <string name="server_url">https://project-backend-2.mybluemix.net</string>
-    <string name="server_ur_templ">project-backend.mybluemix.net</string>
+    <!--<string name="server_ur_templ">35.201.103.234</string>-->
+    <string name="server_ur_templ">https://project-backend.mybluemix.net</string>
+    <string name="http">http</string>
     <string name="account">/account</string>
     <string name="add_employee_endpoint">/add/employee</string>
     <string name="sign_up">/onboard</string>
@@ -130,10 +132,10 @@
     <string name="firebase_storage">gs://project-ae9b7.appspot.com</string>
 
     <!-- Auth0 -->
-    <string name="CC">1</string>
+    <string name="CC">91</string>
     <string name="plus_sign">+</string>
     <string name="sign_in_msg">Enter your number to sign in or create an account</string>
-    <string name="disclamer_msg">Project will send you a one time SMS message to verify your number. Carrier SMS charges may apply</string>
+    <string name="disclamer_msg">Bigital will send you a one time SMS message to verify your number. Carrier SMS charges may apply</string>
     <string name="sent_msg">We have sent an SMS with a code to the number </string>
     <string name="verification_msg">To complete your phone verification, please enter 6-digit activation code</string>
 
