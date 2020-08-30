@@ -6,13 +6,8 @@ const env = dotenv.config();
 import _ from 'underscore';
 import d from 'abacus-debug';
 import express from 'abacus-express';
-import dbclient from 'abacus-dbclient';
-import partition from 'abacus-partition';
 import pouchdb from 'pouchdb';
-import murmurhash from 'murmurhash'
 import email from './email';
-import helper from './helper';
-import jwt from 'jsonwebtoken';
 import verify from './verify';
 import account from './account';
 import org from './org';
@@ -1145,6 +1140,4 @@ app.post('/feedback', authorize, account.feedback)
 
 app.get('/', (req, res) => res.status(200).send('Hello World!'))
 
-
-// let port = 5001;
 app.listen(process.env.PORT || 5001);

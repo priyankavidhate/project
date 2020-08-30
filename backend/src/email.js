@@ -129,4 +129,3 @@ async function sendOrder(from, to, org, type, status, id) {
 module.exports.sendOrder = sendOrder;   
 module.exports.sendAccount = sendAccount;
 module.exports.confirmAccount = confirmAccount;
-
