@@ -1,6 +1,0 @@
-node_modules/**
-!node_modules/chokidar
-!node_modules/fsevents
-.coverage/
-.gitignore
-.travis.yml
