@@ -3,6 +3,8 @@
 import sendgrid from 'sendgrid';
 import d from 'abacus-debug';
 
+const sendgrid_api_Key = process.env.SENDGRID_API_KEY
+
 const debug = d('project-email');
 let helper = sendgrid.mail;
 
@@ -55,7 +57,7 @@ async function confirmAccount(from, to, org, name) {
 
 async function send(mail) {
 
-  let sg = sendgrid(process.env.SENDGRID_API_KEY);
+  let sg = sendgrid(sendgrid_api_Key);
   let request = sg.emptyRequest({
     method: 'POST',
     path: '/v3/mail/send',
@@ -74,7 +76,7 @@ async function send(mail) {
   });
 }
 
-async function sendOrder(from, to, org, type, status, id) {
+async function sendOrder(from, to, org, type, id) {
 
   const from_email = new helper.Email(from);
   const to_email = new helper.Email(to);
@@ -91,7 +93,7 @@ async function sendOrder(from, to, org, type, status, id) {
   let content = new helper.Content('text/plain', body);
   let mail = new helper.Mail(from_email, subject, to_email, content);
 
-  let sg = sendgrid(process.env.SENDGRID_API_KEY);
+  let sg = sendgrid(sendgrid_api_Key);
   let request = sg.emptyRequest({
     method: 'POST',
     path: '/v3/mail/send',
@@ -111,7 +113,7 @@ async function sendOrder(from, to, org, type, status, id) {
     content = new helper.Content('text/plain', body);
     mail = new helper.Mail(from_email, subject, to_email, content);
 
-    sg = sendgrid(process.env.SENDGRID_API_KEY);
+    sg = sendgrid(sendgrid_api_Key);
     request = sg.emptyRequest({
       method: 'POST',
       path: '/v3/mail/send',

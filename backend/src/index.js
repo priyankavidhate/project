@@ -19,10 +19,11 @@ const dburl = process.env.DBURL || '';
 const debug = d('project');
 const app = express();
 const accountDbName = process.env.ACCOUNTDB || 'account';
-const ordersDbName = process.env.ORDERSDB //|| 'order';
+const ordersDbName = process.env.ORDERSDB 
 const activityDbName = process.env.ACTIVITYDB || 'activity';
 const orgDbName = process.env.ORGDB || 'org';
 const companyEmailAddress = process.env.COMPANYEMAIL;
+const enable_email_notification = process.env.ENABLE_EMAIL_NOTIFICATION || false
 const day = 86400000;
 const tagView = 'orgDetails/byTag';
 const toFromCount = 'ToFrom/toFrom-view';
@@ -494,6 +495,10 @@ async function createOrder(req, res) {
       subject.body = title_second_org;
 
       await notification.send(accounts, data, subject);
+
+      if(enable_email_notification) {
+        await email.sendOrder(companyEmailAddress, first_org, second_org, type, response.id)
+      }
 
       return res.status(200).send(input);
     }
