@@ -6,14 +6,14 @@ android {
         config {
             keyAlias 'first build'
             keyPassword 'rohitpune123'
-            storeFile file('/Users/rohitvyavahare/project/project.jks')
+            storeFile file('/Users/priyankavidhate/project/project.jks')
             storePassword 'rohitpune123'
         }
     }
     compileSdkVersion 23
     buildToolsVersion '25.0.0'
     defaultConfig {
-        applicationId "com.bigital.rohitvyavahare.project"
+        applicationId "com.bigital.priyankavidhate.project"
         minSdkVersion 15
         targetSdkVersion 22
         versionCode 4
